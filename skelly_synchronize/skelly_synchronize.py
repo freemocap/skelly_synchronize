@@ -5,7 +5,7 @@ import time
 import logging
 import moviepy.editor as mp
 import numpy as np
-from glob import glob
+#from glob import glob
 from scipy import signal
 from pathlib import Path
 
@@ -30,7 +30,7 @@ class VideoSynchTrimming:
         os.makedirs(self.audio_folder_path, exist_ok=True)
 
 
-    def get_clip_list(self, file_type: str) -> list:
+    def get_video_file_list(self, file_type: str) -> list:
         '''Return a list of all video files in the base_path folder that match the given file type.'''
 
         # create general search from file type to use in glob search, including cases for upper and lowercase file types
@@ -38,14 +38,14 @@ class VideoSynchTrimming:
         file_extension_lower = '*' + file_type.lower()
     
         # make list of all files with file type
-        clip_list = glob(file_extension_upper) + glob(file_extension_lower) #if two capitalization standards are used, the videos may not be in original order
+        video_filepath_list = list(self.raw_video_path.glob(file_extension_upper)) + list(self.raw_video_path.glob(file_extension_lower)) #if two capitalization standards are used, the videos may not be in original order
         
         # because glob behaves differently on windows vs. mac/linux, we collect all files both upper and lowercase, and remove redundant files that appear on windows
-        unique_clip_list = self.get_unique_list(clip_list)
+        unique_video_filepath_list = self.get_unique_list(video_filepath_list)
         
-        return unique_clip_list
+        return unique_video_filepath_list
 
-    def get_files(self, clip_list: list) -> list:
+    def get_files(self, video_filepath_list: list) -> list:
         '''Get video files from clip_list, extract the audio, and put the video and audio files in a list.
         Return a list of lists containing the video file name and file, and audio name and file.
         Also return a list containing the audio sample rate from each file.'''
@@ -56,16 +56,16 @@ class VideoSynchTrimming:
         sample_rate_list = []
 
         # iterate through clip_list, open video files and audio files, and store in file_list
-        for clip in clip_list:
+        for video_filepath in video_filepath_list:
             # take vid_name and change extension to create audio file name
-            vid_name = clip
-            audio_name = clip.split(".")[0] + '.wav'
+            video_name = str(video_filepath).split("/")[-1] #get just the name of the video file
+            audio_name = video_name.split(".")[0] + '.wav'
             # open video files
-            video_file = mp.VideoFileClip(str(self.raw_video_path / vid_name), audio=True)
-            logging.info(f"video size is {video_file.size}")
+            video_file = mp.VideoFileClip(str(video_filepath), audio=True)
+            logging.debug(f"video size is {video_file.size}")
             # waiting on moviepy to fix issue related to portrait mode videos having height and width swapped
-            video_file = video_file.resize((1080,1920)) #hacky workaround for iPhone portrait mode videos
-            logging.info(f"resized video is {video_file.size}")
+            #video_file = video_file.resize((1080,1920)) #hacky workaround for iPhone portrait mode videos
+            logging.debug(f"resized video is {video_file.size}")
 
             # get length of video clip
             vid_length = video_file.duration
@@ -78,7 +78,7 @@ class VideoSynchTrimming:
             sample_rate_list.append(audio_rate)
 
             # save video and audio file names and files in list
-            file_list.append([vid_name, video_file, audio_name, audio_signal])
+            file_list.append([video_name, video_file, audio_name, audio_signal])
 
             logging.info(f"video length: {vid_length} seconds, audio sample rate {audio_rate} Hz")
 
@@ -91,7 +91,6 @@ class VideoSynchTrimming:
 
         return unique_list
         
-
     def get_fps_list(self, file_list: list) -> list:
         '''Retrieve frames per second of each video clip in file_list'''
         return [file[1].fps for file in file_list]
@@ -148,8 +147,6 @@ class VideoSynchTrimming:
         min_duration = min([file_list[index][1].duration - lag_list[index] for index in range(len(file_list))])
         
         return min_duration
-
-
     
     def trim_videos(self, file_list: list, lag_list: list) -> list:
         '''Take a list of video files and a list of lags, and make all videos start and end at the same time.
@@ -173,39 +170,6 @@ class VideoSynchTrimming:
 
         return trimmed_video_filenames
 
-    def front_trim_videos(self, file_list: list, lag_list: list) -> list:
-        '''Take a list of video files and a list of lags, and shortens the beginnings of the videos by the lags to ensure they all start at the same time
-        Must be in folder of file list'''
-        front_trimmed_videos = []
-
-        # for each video in the list, create a new video trimmed from the begining by the lag value for that video, and add it to the empty list
-        for i in range(len(file_list)):
-            logging.debug(f"trimming video file {file_list[i][1]}")
-            front_trimmed_video = file_list[i][1].subclip(lag_list[i],file_list[i][1].duration)
-            #front_trimmed_video = file_list[i][1].subclip(lag_list[i]) # this is a cleaner way of writing this, but needs testing
-            front_trimmed_videos.append([file_list[i][0], front_trimmed_video])
-
-        return front_trimmed_videos
-
-    def back_trim_videos(self, video_list: list) -> list:
-        '''Take a list of video files and trims the ends of the videos to ensure they're all the same length'''
-        min_duration = min([video[1].duration for video in video_list])
-        logging.debug(f"shortest video is {min_duration}")
-
-        # create list to store names of final videos
-        video_names = []
-        # trim all videos to length of shortest video, and give it a new name
-        for video in video_list:
-            fully_trimmed_video = video[1].subclip(0,min_duration)
-            if video[0].split("_")[0] == "raw":
-                video_name = "synced_" + video[0][4:]
-            else:
-                video_name = "synced_" + video[0]
-            video_names.append(video_name) #add new name to list to reference for plotting
-            logging.debug(f"video size is {fully_trimmed_video.size}")
-            fully_trimmed_video.write_videofile(video_name)
-            logging.info(f"Video Saved - Cam name: {video_name}, Video Duration: {fully_trimmed_video.duration}")
-
 
 def sync_videos(sessionID: str, fmc_data_path: Path, file_type: str) -> None:
     '''Run the functions from the VideoSynchTrimming class to sync all videos with the given file type in the base path folder.
@@ -215,14 +179,15 @@ def sync_videos(sessionID: str, fmc_data_path: Path, file_type: str) -> None:
     synch_and_trim = VideoSynchTrimming(sessionID, fmc_data_path)
     # the rest of this could theoretically be put in the init function, don't know which is best practice...
 
-    os.chdir(synch_and_trim.raw_video_path)
+    #os.chdir(synch_and_trim.raw_video_path)
     # create list of video clips in raw video folder
-    clip_list = synch_and_trim.get_clip_list(file_type)
-    os.chdir(synch_and_trim.base_path)
-
+    clip_list = synch_and_trim.get_video_file_list(file_type)
+    #os.chdir(synch_and_trim.base_path)
+    #print(clip_list)
+    
     # get the files and sample rate of videos in raw video folder, and store in list
     files, audio_sample_rates = synch_and_trim.get_files(clip_list)
-
+    
     # find the frames per second of each video
     fps_list = synch_and_trim.get_fps_list(files)
     
@@ -234,11 +199,9 @@ def sync_videos(sessionID: str, fmc_data_path: Path, file_type: str) -> None:
     lag_list = synch_and_trim.find_lags(files, audio_sample_rates[0])
     
     # use lags to trim the videos
-    os.chdir(synch_and_trim.synced_video_path)
-    #front_trimmed_videos = synch_and_trim.front_trim_videos(files, lag_list)
-    #fully_trimmed_videos = synch_and_trim.back_trim_videos(front_trimmed_videos)
+    #os.chdir(synch_and_trim.synced_video_path)
     trimmed_videos = synch_and_trim.trim_videos(files, lag_list)
-    os.chdir(synch_and_trim.base_path)
+    #os.chdir(synch_and_trim.base_path)
 
 def main(sessionID: str, fmc_data_path: Path, file_type: str):
     # start timer to measure performance
