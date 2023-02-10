@@ -240,13 +240,9 @@ def sync_videos(sessionID: str, fmc_data_path: Path, file_type: str) -> None:
     trimmed_videos = synch_and_trim.trim_videos(files, lag_list)
     os.chdir(synch_and_trim.base_path)
 
-def main():
+def main(sessionID: str, fmc_data_path: Path, file_type: str):
     # start timer to measure performance
     start_timer = time.time()
-
-    sessionID = "iPhoneTesting"
-    fmc_data_path = Path("/Users/philipqueen/Documents/Humon Research Lab/FreeMocap_Data")
-    file_type = "MP4"
 
     sync_videos(sessionID, fmc_data_path, file_type)
 
@@ -259,4 +255,7 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    sessionID = "iPhoneTesting"
+    fmc_data_path = Path("/Users/philipqueen/Documents/Humon Research Lab/FreeMocap_Data")
+    file_type = "MP4"
+    main(sessionID, fmc_data_path, file_type)
