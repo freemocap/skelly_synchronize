@@ -5,7 +5,6 @@ import time
 import logging
 import moviepy.editor as mp
 import numpy as np
-#from glob import glob
 from scipy import signal
 from pathlib import Path
 
@@ -165,7 +164,7 @@ class VideoSynchTrimming:
                 video_name = "synced_" + file_list[index][0]
             trimmed_video_filenames.append(video_name) #add new name to list to reference for plotting
             logging.debug(f"video size is {trimmed_video.size}")
-            trimmed_video.write_videofile(video_name)
+            trimmed_video.write_videofile(str(self.synced_video_path / video_name))
             logging.info(f"Video Saved - Cam name: {video_name}, Video Duration: {trimmed_video.duration}")
 
         return trimmed_video_filenames
