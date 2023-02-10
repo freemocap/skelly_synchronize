@@ -10,22 +10,22 @@ from pathlib import Path
 
 logging.basicConfig(level = logging.DEBUG)
 
-class VideoSynchTrimming:
+class VideoSynchronize:
     '''Class of functions for time synchronizing and trimming video files based on cross correlation of their audio.'''
     
     def __init__(self, sessionID: str, fmc_data_path: Path) -> None:
-        '''Initialize VideoSynchTrimmingClass'''
+        '''Initialize VideoSynchronize class'''
         self.base_path = fmc_data_path / sessionID
 
         self.raw_video_folder_name = "RawVideos"
         self.raw_video_path = self.base_path / self.raw_video_folder_name
-        self.synced_video_folder_name = "SyncedVideos"
-        self.synced_video_path = self.base_path / self.synced_video_folder_name
+        self.synchronized_video_folder_name = "SyncedVideos"
+        self.synchronized_video_path = self.base_path / self.synchronized_video_folder_name
         self.audio_folder_name = "AudioFiles"
         self.audio_folder_path = self.base_path / self.audio_folder_name
 
-        # create synced video and audio file folders
-        os.makedirs(self.synced_video_path, exist_ok=True)
+        # create synchronizeded video and audio file folders
+        os.makedirs(self.synchronized_video_path, exist_ok=True)
         os.makedirs(self.audio_folder_path, exist_ok=True)
 
 
@@ -110,8 +110,8 @@ class VideoSynchTrimming:
         return ((audio_file - np.mean(audio_file))/np.std(audio_file - np.mean(audio_file)))
 
     def cross_correlate(self, audio1, audio2):
-        '''Take two audio files, sync them using cross correlation, and trim them to the same length.
-        Inputs are two WAV files to be synced. Return the lag expressed in terms of the audio sample rate of the clips.
+        '''Take two audio files, synchronize them using cross correlation, and trim them to the same length.
+        Inputs are two WAV files to be synchronizeded. Return the lag expressed in terms of the audio sample rate of the clips.
         '''
 
         # compute cross correlation with scipy correlate function, which gives the correlation of every different lag value
@@ -164,49 +164,44 @@ class VideoSynchTrimming:
                 video_name = "synced_" + file_list[index][0]
             trimmed_video_filenames.append(video_name) #add new name to list to reference for plotting
             logging.debug(f"video size is {trimmed_video.size}")
-            trimmed_video.write_videofile(str(self.synced_video_path / video_name))
+            trimmed_video.write_videofile(str(self.synchronized_video_path / video_name))
             logging.info(f"Video Saved - Cam name: {video_name}, Video Duration: {trimmed_video.duration}")
 
         return trimmed_video_filenames
 
 
-def sync_videos(sessionID: str, fmc_data_path: Path, file_type: str) -> None:
-    '''Run the functions from the VideoSynchTrimming class to sync all videos with the given file type in the base path folder.
+def synchronize_videos(sessionID: str, fmc_data_path: Path, file_type: str) -> None:
+    '''Run the functions from the VideoSynchronize class to synchronize all videos with the given file type in the base path folder.
     file_type can be given in either case, with or without a leading period
     '''
     # instantiate class
-    synch_and_trim = VideoSynchTrimming(sessionID, fmc_data_path)
+    synchronize = VideoSynchronize(sessionID, fmc_data_path)
     # the rest of this could theoretically be put in the init function, don't know which is best practice...
 
-    #os.chdir(synch_and_trim.raw_video_path)
     # create list of video clips in raw video folder
-    clip_list = synch_and_trim.get_video_file_list(file_type)
-    #os.chdir(synch_and_trim.base_path)
-    #print(clip_list)
+    clip_list = synchronize.get_video_file_list(file_type)
     
     # get the files and sample rate of videos in raw video folder, and store in list
-    files, audio_sample_rates = synch_and_trim.get_files(clip_list)
+    files, audio_sample_rates = synchronize.get_files(clip_list)
     
     # find the frames per second of each video
-    fps_list = synch_and_trim.get_fps_list(files)
+    fps_list = synchronize.get_fps_list(files)
     
     # frame rates and audio sample rates must be the same duration for the trimming process to work correctly
-    synch_and_trim.check_rates(fps_list)
-    synch_and_trim.check_rates(audio_sample_rates)
+    synchronize.check_rates(fps_list)
+    synchronize.check_rates(audio_sample_rates)
     
     # find the lags between starting times
-    lag_list = synch_and_trim.find_lags(files, audio_sample_rates[0])
+    lag_list = synchronize.find_lags(files, audio_sample_rates[0])
     
     # use lags to trim the videos
-    #os.chdir(synch_and_trim.synced_video_path)
-    trimmed_videos = synch_and_trim.trim_videos(files, lag_list)
-    #os.chdir(synch_and_trim.base_path)
+    trimmed_videos = synchronize.trim_videos(files, lag_list)
 
 def main(sessionID: str, fmc_data_path: Path, file_type: str):
     # start timer to measure performance
     start_timer = time.time()
 
-    sync_videos(sessionID, fmc_data_path, file_type)
+    synchronize_videos(sessionID, fmc_data_path, file_type)
 
     # end performance timer
     end_timer = time.time()
