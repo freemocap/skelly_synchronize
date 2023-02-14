@@ -1,5 +1,3 @@
-import os
-import sys
 import librosa
 import time
 import logging
@@ -25,8 +23,8 @@ class VideoSynchronize:
         self.audio_folder_path = self.base_path / self.audio_folder_name
 
         # create synchronizeded video and audio file folders
-        os.makedirs(self.synchronized_video_path, exist_ok=True)
-        os.makedirs(self.audio_folder_path, exist_ok=True)
+        self.synchronized_video_path.mkdir(parents = False, exist_ok=True)
+        self.audio_folder_path.mkdir(parents = False, exist_ok=True)
 
 
     def get_video_file_list(self, file_type: str) -> list:
