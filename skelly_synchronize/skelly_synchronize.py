@@ -70,11 +70,6 @@ class VideoSynchronize:
 
         return video_file_dict
     
-    def get_audio_file_ffmpeg(self, file_pathstring, folder_path, file_name, output_ext="wav"):
-        subprocess.call(["ffmpeg", "-y", "-i", file_pathstring, f"{folder_path}/{file_name}.{output_ext}"], 
-                    stdout=subprocess.DEVNULL,
-                    stderr=subprocess.STDOUT)
-    
     def get_audio_files(self, video_file_dict: dict) -> dict:
         '''Extract audio files from videos and return a dictionary with keys as the name of the audio and values as the audio files'''
         audio_signal_dict = dict()
