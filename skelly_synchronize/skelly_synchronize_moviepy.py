@@ -9,7 +9,7 @@ from pathlib import Path
 
 logging.basicConfig(level = logging.DEBUG)
 
-class VideoSynchronize:
+class VideoSynchronizeMoviepy:
     '''Class of functions for time synchronizing and trimming video files based on cross correlation of their audio.'''
     
     def __init__(self, sessionID: str, fmc_data_path: Path) -> None:
@@ -42,99 +42,49 @@ class VideoSynchronize:
         unique_video_filepath_list = self.get_unique_list(video_filepath_list)
         
         return unique_video_filepath_list
-    
-    def get_video_file_dict(self, video_filepath_list: list) -> dict:
-        video_file_dict = dict()
-        for video_filepath in video_filepath_list:
-            video_dict = dict()
-            video_dict["video filepath"] = video_filepath
-            video_dict["video pathstring"] = str(video_filepath)
-            video_name = str(video_filepath).split("/")[-1]
-            video_dict["camera name"] = video_name.split(".")[0]
 
-            video_dict["video duration"] = self.extract_video_duration_ffmpeg(str(video_filepath))
-            video_dict["video fps"] = self.extract_video_fps_ffmpeg(str(video_filepath))
-            video_file_dict[video_name] = video_dict
+    def get_video_files_moviepy(self, video_filepath_list: list) -> dict:
+        '''Get video files from clip_list and return a dictionary with keys as the name of the video and values as the video files'''
+    
+        # create empty list for storing audio and video files, will contain sublists formatted like [video_file_name,video_file,audio_file_name,audio_file] 
+        video_file_dict = dict()
+
+        # iterate through clip_list, open video files and audio files, and store in file_list
+        for video_filepath in video_filepath_list:
+            # take vid_name and change extension to create audio file name
+            video_name = str(video_filepath).split("/")[-1] #get just the name of the video file
+            camera_name = video_name.split(".")[0]
+
+            # open video files
+            video_file = mp.VideoFileClip(str(video_filepath), audio=True)
+            logging.debug(f"video size is {video_file.size}")
+            # waiting on moviepy to fix issue related to portrait mode videos having height and width swapped
+            #video_file = video_file.resize((1080,1920)) #hacky workaround for iPhone portrait mode videos
+            #logging.debug(f"resized video is {video_file.size}")
+
+            vid_length = video_file.duration
+
+            video_file_dict[video_name] = {"video file": video_file, "camera name": camera_name, "video duration": vid_length}
+
+            logging.info(f"video_name: {video_name}, video length: {vid_length} seconds")
 
         return video_file_dict
     
-    def get_audio_files_ffmpeg(self, video_file_dict: dict, audio_extension: str) -> dict:
+    def get_audio_files_moviepy(self, video_file_dict: dict) -> dict:
+        '''Extract audio files from videos and return a dictionary with keys as the name of the audio and values as the audio files'''
         audio_signal_dict = dict()
+
         for video_dict in video_file_dict.values():
-            self.extract_audio_from_video_ffmpeg(file_pathstring=video_dict["video pathstring"], 
-                                                 file_name=video_dict["camera name"], 
-                                                 output_folder_path=self.audio_folder_path, 
-                                                 output_extension=audio_extension)
-            
-            audio_name = video_dict["camera name"] + "." + audio_extension
-            
+            audio_name = video_dict["camera name"] + '.wav'
+
+            # create .wav file of clip audio
+            video_dict["video file"].audio.write_audiofile(str(self.audio_folder_path / audio_name))
+
+            # extract raw audio from Wav file
             audio_signal, audio_rate = librosa.load(self.audio_folder_path / audio_name, sr = None)
             audio_signal_dict[audio_name] = {"audio file": audio_signal, "sample rate": audio_rate, "camera name": video_dict["camera name"]}
 
         return audio_signal_dict
-    
-    def get_fps_list_ffmpeg(self, video_file_dict: dict):
-        return [video_dict["video fps"] for video_dict in video_file_dict.values()]
-    
-    def trim_videos_ffmpeg(self, video_file_dict: dict, lag_dict: dict) -> list:
-        '''Take a list of video files and a list of lags, and make all videos start and end at the same time.'''
-
-        min_duration = self.find_minimum_video_duration(video_file_dict, lag_dict)
-        trimmed_video_filenames = [] # can be used for plotting
-
-        for video_dict in video_file_dict.values():
-            logging.debug(f"trimming video file {video_dict['camera name']}")
-            if video_dict["camera name"].split("_")[0] == "raw":
-                synced_video_name = "synced_" + video_dict["camera name"][4:] + ".mp4"
-            else:
-                synced_video_name = "synced_" + video_dict["camera name"] + ".mp4"
-            trimmed_video_filenames.append(synced_video_name) #add new name to list to reference for plotting
-            self.trim_single_video_ffmpeg(input_video_pathstring = video_dict["video pathstring"], 
-                                     start_time = lag_dict[video_dict["camera name"]], 
-                                     desired_duration = min_duration, 
-                                     output_video_pathstring = str(self.synchronized_folder_path / synced_video_name))
-            logging.info(f"Video Saved - Cam name: {video_dict['camera name']}, Video Duration: {min_duration}")
-
-        return trimmed_video_filenames
-
-    def extract_audio_from_video_ffmpeg(self, file_pathstring, file_name, output_folder_path, output_extension="wav"):
-        '''Run a subprocess call to extract the audio from a video file using ffmpeg'''
-
-        subprocess.run(["ffmpeg", "-y", "-i", file_pathstring, f"{output_folder_path}/{file_name}.{output_extension}"], 
-                        stdout=subprocess.PIPE,
-                        stderr=subprocess.STDOUT)
-        
-    def extract_video_duration_ffmpeg(self, file_pathstring):
-        '''Run a subprocess call to get the duration from a video file using ffmpeg'''
-
-        extract_duration_subprocess = subprocess.run(['ffprobe', '-v', 'error', '-show_entries', 'format=duration', '-of', 'default=noprint_wrappers=1:nokey=1', file_pathstring], 
-                                           stdout=subprocess.PIPE, 
-                                           stderr=subprocess.STDOUT)
-        video_duration = float(extract_duration_subprocess.stdout)
-
-        return video_duration
-    
-    def extract_video_fps_ffmpeg(self, file_pathstring):
-        '''Run a subprocess call to get the fps of a video file using ffmpeg'''
-        
-        extract_fps_subprocess=subprocess.run(['ffprobe', '-v', 'error', '-select_streams', 'v:0', '-show_entries', 'stream=r_frame_rate', '-of', 'default=noprint_wrappers=1:nokey=1', file_pathstring], 
-                                         stdout=subprocess.PIPE, 
-                                         stderr=subprocess.STDOUT)
-        # get the results, then remove the excess characters to get something like '####/###'
-        cleaned_stdout = str(extract_fps_subprocess.stdout).split("'")[1].split("\\")[0]
-        # separate out numerator and denominator to calculate the fraction
-        numerator, denominator = cleaned_stdout.split("/")
-        video_fps = float(int(numerator)/int(denominator))
-
-        return video_fps
-
-    def trim_single_video_ffmpeg(self, input_video_pathstring, start_time, desired_duration, output_video_pathstring):
-        '''Run a subprocess call to trim a video from start time to last as long as the desired duration'''
-
-        trim_video_subprocess = subprocess.run(["ffmpeg", "-i", f"{input_video_pathstring}", "-ss", f"{start_time}", "-t", f"{desired_duration}", "-y", f"{output_video_pathstring}"],
-                       stdout=subprocess.PIPE,
-                       stderr=subprocess.STDOUT)
-
     
     def get_audio_sample_rates(self, audio_signal_dict:dict) -> list:
         '''Get the sample rates of each audio file and return them in a list'''
@@ -149,6 +99,10 @@ class VideoSynchronize:
 
         return unique_list
         
+    def get_fps_list_moviepy(self, video_file_dict: dict) -> list:
+        '''Retrieve frames per second of each video clip in video_file_dict and return the list'''
+        return [video_dict["video file"].fps for video_dict in video_file_dict.values()]
+
     def check_rates(self, rate_list: list):
         '''Check if audio sample rates or video frame rates are equal, throw an exception if not (or if no rates are given).'''
         if len(rate_list) == 0:
@@ -203,6 +157,25 @@ class VideoSynchronize:
         
         return min_duration
     
+    def trim_videos_moviepy(self, video_file_dict: dict, lag_list: list) -> list:
+        '''Take a list of video files and a list of lags, and make all videos start and end at the same time.'''
+
+        min_duration = self.find_minimum_video_duration(video_file_dict, lag_list)
+        trimmed_video_filenames = [] # can be used for plotting
+
+        for video_dict in video_file_dict.values():
+            logging.debug(f"trimming video file {video_dict['camera name']}")
+            trimmed_video = video_dict["video file"].subclip(lag_list[video_dict["camera name"]],lag_list[video_dict["camera name"]] + min_duration)
+            if video_dict["camera name"].split("_")[0] == "raw":
+                video_name = "synced_" + video_dict["camera name"][4:] + ".mp4"
+            else:
+                video_name = "synced_" + video_dict["camera name"] + ".mp4"
+            trimmed_video_filenames.append(video_name) #add new name to list to reference for plotting
+            logging.debug(f"video size is {trimmed_video.size}")
+            trimmed_video.write_videofile(str(self.synchronized_folder_path / video_name))
+            logging.info(f"Video Saved - Cam name: {video_dict['camera name']}, Video Duration: {trimmed_video.duration}")
+
+        return trimmed_video_filenames
 
 def synchronize_videos_ffmpeg(sessionID: str, fmc_data_path: Path, file_type: str) -> None:
     '''Run the functions from the VideoSynchronize class to synchronize all videos with the given file type in the base path folder.
@@ -210,34 +183,48 @@ def synchronize_videos_ffmpeg(sessionID: str, fmc_data_path: Path, file_type: st
     Uses FFmpeg to handle the video files.
     '''
     # instantiate class
-    synchronize = VideoSynchronize(sessionID, fmc_data_path)
+    synchronize = VideoSynchronizeMoviepy(sessionID, fmc_data_path)
 
     # create list of video clips in raw video folder
     clip_list = synchronize.get_video_file_list(file_type)
 
-    # create dictionaries with video and audio information
-    video_file_dict = synchronize.get_video_file_dict(clip_list)
-    audio_signal_dict = synchronize.get_audio_files_ffmpeg(video_file_dict, audio_extension="wav")
+def synchronize_videos_moviepy(sessionID: str, fmc_data_path: Path, file_type: str) -> None:
+    '''Run the functions from the VideoSynchronize class to synchronize all videos with the given file type in the base path folder.
+    file_type can be given in either case, with or without a leading period.
+    Uses the moviepy library to handle the video files.
+    '''
+    # instantiate class
+    synchronize = VideoSynchronizeMoviepy(sessionID, fmc_data_path)
+    # the rest of this could theoretically be put in the init function, don't know which is best practice...
 
-    # get video fps and audio sample rate
-    fps_list = synchronize.get_fps_list_ffmpeg(video_file_dict)
+    # create list of video clips in raw video folder
+    clip_list = synchronize.get_video_file_list(file_type)
+    
+    # get the files and sample rate of videos in raw video folder, and store in list
+    video_file_dict = synchronize.get_video_files_moviepy(clip_list)
+    audio_signal_dict = synchronize.get_audio_files_moviepy(video_file_dict)
+    
+    # find the frames per second of each video
+    fps_list = synchronize.get_fps_list_moviepy(video_file_dict)
+
     audio_sample_rates = synchronize.get_audio_sample_rates(audio_signal_dict)
-
+    
     # frame rates and audio sample rates must be the same duration for the trimming process to work correctly
     synchronize.check_rates(fps_list)
     synchronize.check_rates(audio_sample_rates)
-
+    
     # find the lags between starting times
-    lag_dict = synchronize.find_lags(audio_signal_dict, audio_sample_rates[0])
-
-    synchronize.trim_videos_ffmpeg(video_file_dict, lag_dict)
+    lag_list = synchronize.find_lags(audio_signal_dict, audio_sample_rates[0])
+    
+    # use lags to trim the videos
+    trimmed_videos = synchronize.trim_videos_moviepy(video_file_dict, lag_list)
     
 
 def main(sessionID: str, fmc_data_path: Path, file_type: str):
     # start timer to measure performance
     start_timer = time.time()
 
-    synchronize_videos_ffmpeg(sessionID, fmc_data_path, file_type)
+    synchronize_videos_moviepy(sessionID, fmc_data_path, file_type)
 
     # end performance timer
     end_timer = time.time()
