@@ -247,7 +247,7 @@ def main(sessionID: str, fmc_data_path: Path, file_type: str):
 
 
 if __name__ == "__main__":
-    sessionID = "iPhoneTesting"
-    fmc_data_path = Path("/Users/philipqueen/Documents/Humon Research Lab/FreeMocap_Data")
+    sessionID = "your_session_id"
+    freemocap_data_path = Path("path_to_your_freemocap_data_folder")
     file_type = "MP4"
-    main(sessionID, fmc_data_path, file_type)
+    main(sessionID, freemocap_data_path, file_type)
