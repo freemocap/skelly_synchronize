@@ -19,13 +19,13 @@ def get_logging_handlers(log_file_path: Optional[str] = ""):
     )
 
     console_handler = logging.StreamHandler(sys.stdout)
-    console_handler.setLevel(logging.DEBUG)
+    console_handler.setLevel(logging.INFO)
     console_handler.setFormatter(default_formatter)
     handlers = [console_handler]
     if log_file_path:
         file_handler = logging.FileHandler(log_file_path)
         file_handler.setFormatter(default_formatter)
-        file_handler.setLevel(logging.DEBUG)
+        file_handler.setLevel(logging.INFO)
         handlers.append(file_handler)
 
     return handlers
@@ -35,7 +35,7 @@ def configure_logging(log_file_path: Optional[str] = ""):
     if len(logging.getLogger().handlers) == 0:
         handlers = get_logging_handlers(log_file_path)
         logging.getLogger("").handlers.extend(handlers)
-        logging.root.setLevel(logging.DEBUG)
+        logging.root.setLevel(logging.INFO)
         logger = logging.getLogger(__name__)
         logger.info(f"Added logging handlers: {handlers}")
     else:

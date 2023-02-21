@@ -6,4 +6,4 @@ def returnTrue(num):
 
 
 def test_test():
-    assert returnTrue() == True
+    assert returnTrue(6) == True
