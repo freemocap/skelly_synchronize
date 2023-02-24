@@ -18,10 +18,7 @@ def lag_list():
 
 
 def test_normalize_lag_list(lag_list):
-    test_synchronize = VideoSynchronize(
-        "iPhoneTesting",
-        Path("/Users/philipqueen/Documents/Humon Research Lab/FreeMocap_Data"),
-    )
+    test_synchronize = VideoSynchronize()
     assert test_synchronize._normalize_lag_dictionary(lag_list) == {
         "Cam1": 9.475963718820863,
         "Cam2": 5.135736961451248,
