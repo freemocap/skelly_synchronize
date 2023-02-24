@@ -38,7 +38,9 @@ class VideoSynchronize:
 
         # create dictionaries with video and audio information
         video_file_dict = self._get_video_file_dict(video_file_list)
-        audio_signal_dict = self._get_audio_files(video_file_dict, audio_extension="wav")
+        audio_signal_dict = self._get_audio_files(
+            video_file_dict, audio_extension="wav"
+        )
 
         # get video fps and audio sample rate
         fps_list = self._get_fps_list(video_file_dict)
