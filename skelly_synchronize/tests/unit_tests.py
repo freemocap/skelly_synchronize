@@ -1,5 +1,13 @@
 import pytest
+import sys
 from pathlib import Path
+
+print(f"Thank you for using skelly_synchronize!")
+print(f"This is printing from: {__file__}")
+
+base_package_path = Path(__file__).parent.parent.parent
+print(f"adding base_package_path: {base_package_path} : to sys.path")
+sys.path.insert(0, str(base_package_path))  # add parent directory to sys.path
 
 from skelly_synchronize.skelly_synchronize import VideoSynchronize
 
@@ -19,6 +27,7 @@ def test_normalize_lag_list(lag_list):
         "Cam2": 5.135736961451248,
         "Cam3": 0.0,
     }, "Lag dict did not normalize correctly"
+
 
 if __name__ == "__main__":
     test_normalize_lag_list(lag_list)
