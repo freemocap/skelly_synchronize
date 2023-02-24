@@ -117,16 +117,9 @@ class VideoSynchronize:
             )
             / sample_rate
             for single_audio_dict in audio_signal_dict.values()
-        }  # cross correlates all audio to the first audio file in the list
-        # also divides by the audio sample rate in order to get the lag in seconds
+        }  # cross correlates all audio to the first audio file in the list, and divides by the audio sample rate in order to get the lag in seconds
 
-        # now that we have our lag array, we subtract every value in the array from the max value
-        # this creates a normalized lag array where the latest video has lag of 0
-        # the max value lag represents the latest video - thanks Oliver for figuring this out
-        normalized_lag_dict = {
-            camera_name: (max(lag_dict.values()) - value)
-            for camera_name, value in lag_dict.items()
-        }
+        normalized_lag_dict = self._normalize_lag_dictionary(lag_dict)
 
         logging.debug(
             f"original lag list: {lag_dict} normalized lag list: {normalized_lag_dict}"
@@ -304,6 +297,18 @@ class VideoSynchronize:
         )
 
         return min_duration
+
+    def _normalize_lag_dictionary(self, lag_dictionary: dict) -> dict:
+        """Subtract every value in the dict from the max value.
+        This creates a normalized lag dict where the latest video has lag of 0.
+        The max value lag represents the latest starting video."""
+
+        normalized_lag_dictionary = {
+            camera_name: (max(lag_dictionary.values()) - value)
+            for camera_name, value in lag_dictionary.items()
+        }
+
+        return normalized_lag_dictionary
 
 
 def synchronize_vidoes(sessionID: str, fmc_data_path: Path, file_type: str) -> None:
