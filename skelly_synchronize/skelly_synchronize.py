@@ -136,7 +136,9 @@ class VideoSynchronize:
 
         return normalized_lag_dict
 
-    def _trim_videos(self, video_info_dict: Dict[str, dict], lag_dict: Dict[str, float]) -> list:
+    def _trim_videos(
+        self, video_info_dict: Dict[str, dict], lag_dict: Dict[str, float]
+    ) -> list:
         """Take a list of video files and a list of lags, and make all videos start and end at the same time."""
 
         min_duration = self._find_minimum_video_duration(video_info_dict, lag_dict)
@@ -167,7 +169,11 @@ class VideoSynchronize:
         return trimmed_video_filenames
 
     def _extract_audio_from_video_ffmpeg(
-        self, file_pathstring: str, file_name: str, output_folder_path: Path, output_extension="wav"
+        self,
+        file_pathstring: str,
+        file_name: str,
+        output_folder_path: Path,
+        output_extension="wav",
     ):
         """Run a subprocess call to extract the audio from a video file using ffmpeg"""
 
@@ -183,7 +189,7 @@ class VideoSynchronize:
             stderr=subprocess.STDOUT,
         )
 
-    def _extract_video_duration_ffmpeg(self, file_pathstring:str):
+    def _extract_video_duration_ffmpeg(self, file_pathstring: str):
         """Run a subprocess call to get the duration from a video file using ffmpeg"""
 
         extract_duration_subprocess = subprocess.run(
@@ -300,7 +306,9 @@ class VideoSynchronize:
 
         return min_duration
 
-    def _normalize_lag_dictionary(self, lag_dictionary: Dict[str, float]) -> Dict[str, float]:
+    def _normalize_lag_dictionary(
+        self, lag_dictionary: Dict[str, float]
+    ) -> Dict[str, float]:
         """Subtract every value in the dict from the max value.
         This creates a normalized lag dict where the latest video has lag of 0.
         The max value lag represents the latest starting video."""
