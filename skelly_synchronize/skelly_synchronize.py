@@ -37,13 +37,13 @@ class VideoSynchronize:
         self.audio_folder_path.mkdir(parents=False, exist_ok=True)
 
         # create dictionaries with video and audio information
-        video_file_dict = self._get_video_file_dict(video_file_list)
+        video_info_dict = self._get_video_info_dict(video_file_list)
         audio_signal_dict = self._get_audio_files(
-            video_file_dict, audio_extension="wav"
+            video_info_dict, audio_extension="wav"
         )
 
         # get video fps and audio sample rate
-        fps_list = self._get_fps_list(video_file_dict)
+        fps_list = self._get_fps_list(video_info_dict)
         audio_sample_rates = self.get_audio_sample_rates(audio_signal_dict)
 
         # frame rates and audio sample rates must be the same duration for the trimming process to work correctly
@@ -53,11 +53,11 @@ class VideoSynchronize:
         # find the lags between starting times
         lag_dict = self._find_lags(audio_signal_dict, audio_sample_rates[0])
 
-        synched_video_names = self._trim_videos(video_file_dict, lag_dict)
+        synched_video_names = self._trim_videos(video_info_dict, lag_dict)
         return synched_video_names
 
-    def _get_video_file_dict(self, video_filepath_list: list) -> dict:
-        video_file_dict = dict()
+    def _get_video_info_dict(self, video_filepath_list: list) -> Dict[str, dict]:
+        video_info_dict = dict()
         for video_filepath in video_filepath_list:
             video_dict = dict()
             video_dict["video filepath"] = video_filepath
@@ -71,15 +71,15 @@ class VideoSynchronize:
             video_dict["video fps"] = self._extract_video_fps_ffmpeg(
                 str(video_filepath)
             )
-            video_file_dict[video_name] = video_dict
+            video_info_dict[video_name] = video_dict
 
-        return video_file_dict
+        return video_info_dict
 
     def _get_audio_files(
-        self, video_file_dict: Dict[str, dict], audio_extension: str
+        self, video_info_dict: Dict[str, dict], audio_extension: str
     ) -> dict:
         audio_signal_dict = dict()
-        for video_dict in video_file_dict.values():
+        for video_dict in video_info_dict.values():
             self._extract_audio_from_video_ffmpeg(
                 file_pathstring=video_dict["video pathstring"],
                 file_name=video_dict["camera name"],
@@ -100,8 +100,8 @@ class VideoSynchronize:
 
         return audio_signal_dict
 
-    def _get_fps_list(self, video_file_dict: dict):
-        return [video_dict["video fps"] for video_dict in video_file_dict.values()]
+    def _get_fps_list(self, video_info_dict: Dict[str, dict]):
+        return [video_dict["video fps"] for video_dict in video_info_dict.values()]
 
     def _check_rates(self, rate_list: list):
         """Check if audio sample rates or video frame rates are equal, throw an exception if not (or if no rates are given)."""
@@ -114,7 +114,7 @@ class VideoSynchronize:
         else:
             raise Exception(f"rates are not equal, rates are {rate_list}")
 
-    def _find_lags(self, audio_signal_dict: dict, sample_rate: int) -> dict:
+    def _find_lags(self, audio_signal_dict: dict, sample_rate: int) -> Dict[str, float]:
         """Take a file list containing video and audio files, as well as the sample rate of the audio, cross correlate the audio files, and output a lag list.
         The lag list is normalized so that the lag of the latest video to start in time is 0, and all other lags are positive.
         """
@@ -136,13 +136,13 @@ class VideoSynchronize:
 
         return normalized_lag_dict
 
-    def _trim_videos(self, video_file_dict: dict, lag_dict: dict) -> list:
+    def _trim_videos(self, video_info_dict: Dict[str, dict], lag_dict: Dict[str, float]) -> list:
         """Take a list of video files and a list of lags, and make all videos start and end at the same time."""
 
-        min_duration = self._find_minimum_video_duration(video_file_dict, lag_dict)
+        min_duration = self._find_minimum_video_duration(video_info_dict, lag_dict)
         trimmed_video_filenames = []  # can be used for plotting
 
-        for video_dict in video_file_dict.values():
+        for video_dict in video_info_dict.values():
             logging.debug(f"trimming video file {video_dict['camera name']}")
             if video_dict["camera name"].split("_")[0] == "raw":
                 synced_video_name = "synced_" + video_dict["camera name"][4:] + ".mp4"
@@ -167,7 +167,7 @@ class VideoSynchronize:
         return trimmed_video_filenames
 
     def _extract_audio_from_video_ffmpeg(
-        self, file_pathstring, file_name, output_folder_path, output_extension="wav"
+        self, file_pathstring: str, file_name: str, output_folder_path: Path, output_extension="wav"
     ):
         """Run a subprocess call to extract the audio from a video file using ffmpeg"""
 
@@ -183,7 +183,7 @@ class VideoSynchronize:
             stderr=subprocess.STDOUT,
         )
 
-    def _extract_video_duration_ffmpeg(self, file_pathstring):
+    def _extract_video_duration_ffmpeg(self, file_pathstring:str):
         """Run a subprocess call to get the duration from a video file using ffmpeg"""
 
         extract_duration_subprocess = subprocess.run(
@@ -204,7 +204,7 @@ class VideoSynchronize:
 
         return video_duration
 
-    def _extract_video_fps_ffmpeg(self, file_pathstring):
+    def _extract_video_fps_ffmpeg(self, file_pathstring: str):
         """Run a subprocess call to get the fps of a video file using ffmpeg"""
 
         extract_fps_subprocess = subprocess.run(
@@ -233,10 +233,10 @@ class VideoSynchronize:
 
     def _trim_single_video_ffmpeg(
         self,
-        input_video_pathstring,
-        start_time,
-        desired_duration,
-        output_video_pathstring,
+        input_video_pathstring: str,
+        start_time: float,
+        desired_duration: float,
+        output_video_pathstring: str,
     ):
         """Run a subprocess call to trim a video from start time to last as long as the desired duration"""
 
@@ -256,7 +256,7 @@ class VideoSynchronize:
             stderr=subprocess.STDOUT,
         )
 
-    def get_audio_sample_rates(self, audio_signal_dict: dict) -> list:
+    def get_audio_sample_rates(self, audio_signal_dict: Dict[str, float]) -> list:
         """Get the sample rates of each audio file and return them in a list"""
         audio_sample_rate_list = [
             single_audio_dict["sample rate"]
@@ -287,20 +287,20 @@ class VideoSynchronize:
         return lag
 
     def _find_minimum_video_duration(
-        self, video_file_dict: dict, lag_list: list
+        self, video_info_dict: Dict[str, dict], lag_list: list
     ) -> float:
         """Take a list of video files and a list of lags, and find what the shortest video is starting from each videos lag offset"""
 
         min_duration = min(
             [
                 video_dict["video duration"] - lag_list[video_dict["camera name"]]
-                for video_dict in video_file_dict.values()
+                for video_dict in video_info_dict.values()
             ]
         )
 
         return min_duration
 
-    def _normalize_lag_dictionary(self, lag_dictionary: dict) -> dict:
+    def _normalize_lag_dictionary(self, lag_dictionary: Dict[str, float]) -> Dict[str, float]:
         """Subtract every value in the dict from the max value.
         This creates a normalized lag dict where the latest video has lag of 0.
         The max value lag represents the latest starting video."""
