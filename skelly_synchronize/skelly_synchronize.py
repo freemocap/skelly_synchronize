@@ -6,50 +6,57 @@ import moviepy.editor as mp
 import numpy as np
 from scipy import signal
 from pathlib import Path
+from typing import Dict
 
 logging.basicConfig(level=logging.INFO)
+
+from utils.get_video_files import get_video_file_list
 
 
 class VideoSynchronize:
     """Class of functions for time synchronizing and trimming video files based on cross correlation of their audio."""
 
-    def __init__(self, sessionID: str, fmc_data_path: Path) -> None:
+    def __init__(self) -> None:
         """Initialize VideoSynchronize class"""
-        self.base_path = fmc_data_path / sessionID
+        logging.debug("VideoSynchronize class initialized")
 
-        self.raw_video_folder_name = "RawVideos"
-        self.raw_video_path = self.base_path / self.raw_video_folder_name
-        self.synchronized_video_folder_name = "SyncedVideos"
+    def synchronize(self, session_folder_path: Path, video_file_list: list) -> list:
+        """Run the functions from the VideoSynchronize class to synchronize all videos with the given file type in the base path folder.
+        Uses FFmpeg to handle the video files.
+        """
+
+        synchronized_video_folder_name = "SyncedVideos"
         self.synchronized_folder_path = (
-            self.base_path / self.synchronized_video_folder_name
+            session_folder_path / synchronized_video_folder_name
         )
-        self.audio_folder_name = "AudioFiles"
-        self.audio_folder_path = self.base_path / self.audio_folder_name
+        audio_folder_name = "AudioFiles"
+        self.audio_folder_path = session_folder_path / audio_folder_name
 
-        # create synchronizeded video and audio file folders
+        # create synchronized video and audio file folders
         self.synchronized_folder_path.mkdir(parents=False, exist_ok=True)
         self.audio_folder_path.mkdir(parents=False, exist_ok=True)
 
-    def get_video_file_list(self, file_type: str) -> list:
-        """Return a list of all video files in the base_path folder that match the given file type."""
+        # create dictionaries with video and audio information
+        video_file_dict = self._get_video_file_dict(video_file_list)
+        audio_signal_dict = self._get_audio_files(
+            video_file_dict, audio_extension="wav"
+        )
 
-        # create general search from file type to use in glob search, including cases for upper and lowercase file types
-        file_extension_upper = "*" + file_type.upper()
-        file_extension_lower = "*" + file_type.lower()
+        # get video fps and audio sample rate
+        fps_list = self._get_fps_list(video_file_dict)
+        audio_sample_rates = self.get_audio_sample_rates(audio_signal_dict)
 
-        # make list of all files with file type
-        video_filepath_list = list(
-            self.raw_video_path.glob(file_extension_upper)
-        ) + list(
-            self.raw_video_path.glob(file_extension_lower)
-        )  # if two capitalization standards are used, the videos may not be in original order
+        # frame rates and audio sample rates must be the same duration for the trimming process to work correctly
+        self._check_rates(fps_list)
+        self._check_rates(audio_sample_rates)
 
-        # because glob behaves differently on windows vs. mac/linux, we collect all files both upper and lowercase, and remove redundant files that appear on windows
-        unique_video_filepath_list = self._get_unique_list(video_filepath_list)
+        # find the lags between starting times
+        lag_dict = self._find_lags(audio_signal_dict, audio_sample_rates[0])
 
-        return unique_video_filepath_list
+        synched_video_names = self._trim_videos(video_file_dict, lag_dict)
+        return synched_video_names
 
-    def get_video_file_dict(self, video_filepath_list: list) -> dict:
+    def _get_video_file_dict(self, video_filepath_list: list) -> dict:
         video_file_dict = dict()
         for video_filepath in video_filepath_list:
             video_dict = dict()
@@ -68,7 +75,9 @@ class VideoSynchronize:
 
         return video_file_dict
 
-    def get_audio_files(self, video_file_dict: dict, audio_extension: str) -> dict:
+    def _get_audio_files(
+        self, video_file_dict: Dict[str, dict], audio_extension: str
+    ) -> dict:
         audio_signal_dict = dict()
         for video_dict in video_file_dict.values():
             self._extract_audio_from_video_ffmpeg(
@@ -91,10 +100,10 @@ class VideoSynchronize:
 
         return audio_signal_dict
 
-    def get_fps_list(self, video_file_dict: dict):
+    def _get_fps_list(self, video_file_dict: dict):
         return [video_dict["video fps"] for video_dict in video_file_dict.values()]
 
-    def check_rates(self, rate_list: list):
+    def _check_rates(self, rate_list: list):
         """Check if audio sample rates or video frame rates are equal, throw an exception if not (or if no rates are given)."""
         if len(rate_list) == 0:
             raise Exception("no rates given")
@@ -105,7 +114,7 @@ class VideoSynchronize:
         else:
             raise Exception(f"rates are not equal, rates are {rate_list}")
 
-    def find_lags(self, audio_signal_dict: dict, sample_rate: int) -> dict:
+    def _find_lags(self, audio_signal_dict: dict, sample_rate: int) -> dict:
         """Take a file list containing video and audio files, as well as the sample rate of the audio, cross correlate the audio files, and output a lag list.
         The lag list is normalized so that the lag of the latest video to start in time is 0, and all other lags are positive.
         """
@@ -127,7 +136,7 @@ class VideoSynchronize:
 
         return normalized_lag_dict
 
-    def trim_videos(self, video_file_dict: dict, lag_dict: dict) -> list:
+    def _trim_videos(self, video_file_dict: dict, lag_dict: dict) -> list:
         """Take a list of video files and a list of lags, and make all videos start and end at the same time."""
 
         min_duration = self._find_minimum_video_duration(video_file_dict, lag_dict)
@@ -256,13 +265,6 @@ class VideoSynchronize:
 
         return audio_sample_rate_list
 
-    def _get_unique_list(self, list: list) -> list:
-        """Return a list of the unique elements from input list"""
-        unique_list = []
-        [unique_list.append(clip) for clip in list if clip not in unique_list]
-
-        return unique_list
-
     def _normalize_audio(self, audio_file):
         """Perform z-score normalization on an audio file and return the normalized audio file - this is best practice for correlating."""
         return (audio_file - np.mean(audio_file)) / np.std(
@@ -311,42 +313,18 @@ class VideoSynchronize:
         return normalized_lag_dictionary
 
 
-def synchronize_vidoes(sessionID: str, fmc_data_path: Path, file_type: str) -> None:
-    """Run the functions from the VideoSynchronize class to synchronize all videos with the given file type in the base path folder.
-    file_type can be given in either case, with or without a leading period.
-    Uses FFmpeg to handle the video files.
-    """
-    # instantiate class
-    synchronize = VideoSynchronize(sessionID, fmc_data_path)
-
-    # create list of video clips in raw video folder
-    clip_list = synchronize.get_video_file_list(file_type)
-
-    # create dictionaries with video and audio information
-    video_file_dict = synchronize.get_video_file_dict(clip_list)
-    audio_signal_dict = synchronize.get_audio_files(
-        video_file_dict, audio_extension="wav"
-    )
-
-    # get video fps and audio sample rate
-    fps_list = synchronize.get_fps_list(video_file_dict)
-    audio_sample_rates = synchronize.get_audio_sample_rates(audio_signal_dict)
-
-    # frame rates and audio sample rates must be the same duration for the trimming process to work correctly
-    synchronize.check_rates(fps_list)
-    synchronize.check_rates(audio_sample_rates)
-
-    # find the lags between starting times
-    lag_dict = synchronize.find_lags(audio_signal_dict, audio_sample_rates[0])
-
-    synchronize.trim_videos(video_file_dict, lag_dict)
-
-
 def main(sessionID: str, fmc_data_path: Path, file_type: str):
     # start timer to measure performance
     start_timer = time.time()
+    session_folder_path = fmc_data_path / sessionID
 
-    synchronize_vidoes(sessionID, fmc_data_path, file_type)
+    raw_video_folder_name = "RawVideos"
+    raw_video_folder_path = session_folder_path / raw_video_folder_name
+
+    video_file_list = get_video_file_list(raw_video_folder_path, ".mp4")
+
+    synchronize = VideoSynchronize()
+    synchronize.synchronize(session_folder_path, video_file_list)
 
     # end performance timer
     end_timer = time.time()
@@ -357,7 +335,9 @@ def main(sessionID: str, fmc_data_path: Path, file_type: str):
 
 
 if __name__ == "__main__":
-    sessionID = "your_session_id"
-    freemocap_data_path = Path("path_to_your_freemocap_data_folder")
+    sessionID = "iPhoneTesting"
+    freemocap_data_path = Path(
+        "/Users/philipqueen/Documents/Humon Research Lab/FreeMocap_Data"
+    )
     file_type = "MP4"
     main(sessionID, freemocap_data_path, file_type)
