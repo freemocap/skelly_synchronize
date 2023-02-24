@@ -25,7 +25,7 @@ jobs:
       - name: Run tests with pytest
         run: |
           pip install pytest
-          pytest skelly_synchronize/tests
+          pytest skelly_synchronize/tests/unit_tests.py
       - name: Upload pytest test results
         uses: actions/upload-artifact@v3
         with:

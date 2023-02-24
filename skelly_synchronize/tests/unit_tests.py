@@ -11,5 +11,12 @@ def lag_list():
 
 def test_normalize_lag_list(lag_list):
     """Actually need to split normalize lag list into different function"""
-    test_synchronize = VideoSynchronize("iPhoneTesting", Path("/Users/philipqueen/Documents/Humon Research Lab/FreeMocap_Data"))
-    assert  test_synchronize._normalize_lag_dictionary(lag_list) == [9.475963718820863, 5.135736961451248, 0.0], "Lag dict did not normalize correctly"
+    test_synchronize = VideoSynchronize(
+        "iPhoneTesting",
+        Path("/Users/philipqueen/Documents/Humon Research Lab/FreeMocap_Data"),
+    )
+    assert test_synchronize._normalize_lag_dictionary(lag_list) == [
+        9.475963718820863,
+        5.135736961451248,
+        0.0,
+    ], "Lag dict did not normalize correctly"
