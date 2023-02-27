@@ -25,7 +25,14 @@ keywords = ["basic",
             "python",
             "repository"] #change these to your project keywords
 
-dependencies = ["pytest"] #add additional dependencies here - try to pin versions as minimally as possible
+dependencies = [
+"pytest",
+"librosa",
+"moviepy",
+"numpy",
+"scipy",
+"setuptools",
+] #add additional dependencies here - try to pin versions as minimally as possible
 
 requires-python = ">=3.8"
 
