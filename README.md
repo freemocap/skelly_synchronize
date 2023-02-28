@@ -4,7 +4,7 @@ This package synchronizes a set of videos of the same event by cross-correlating
 
 # Install and Run
 
-Skelly_synchronize can be installed through pip by running `pip install skelly_synchronize` in your terminal. Once it has installed, it can be run with the command `python -m skelly_synchronize`.
+Skelly_synchronize can be installed through pip by running `pip install skelly_synchronize` in your terminal. Once it has installed, it can be run with the command `python -m skelly_synchronize`. While running, the GUI window may appear frozen, but the terminal should show the progress. Large videos may take a significant amount of time. 
 
 # Video Requirements
 
