@@ -29,14 +29,6 @@ def test_normalize_lag_dict(lag_dict, normalized_lag_dict):
     ), "Lag dict did not normalize correctly"
 
 
-def test_all_lags_add_to_same_value(lag_dict: dict):
-    test_synchronize = VideoSynchronize()
-    normalized_lag_dict = test_synchronize._normalize_lag_dictionary(lag_dict)
-    for lag, normalized_lag in zip(lag_dict.values, normalized_lag_dict.values):
-        print(lag, normalized_lag)
-
-
 if __name__ == "__main__":
     test_normalize_lag_dict(lag_dict, normalized_lag_dict)
-    # test_all_lags_add_to_same_value(lag_dict)
     print("tests passed")
