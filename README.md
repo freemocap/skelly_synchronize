@@ -12,28 +12,14 @@ The following requirements must be met for the script to function:
 
 1. Videos must have audio
 2. Videos must be in the same file format (default is ".mp4")
-3. Videos must have overlapping audio from the same real world event
-4. Videos must be in a folder titled "RawVideos", with no other videos in the folder
+3. All videos in folder must have overlapping audio from the same real world event
 
-# Expected File Structure
-
-To function correctly, Skelly Synchronize expects the following folder structure:
-```
-freemocap_data_folder:
-    sessionID:
-        RawVideos:
-            Cam0.mp4
-            Cam1.mp4
-            ...
-    ...
-```
-The camera names can be changed, and the file format may changed as well, although freemocap currently only uses `.mp4`.
 
 # How to run from source
 
-first clone this repository and pip install the `requirements.txt` file.
+First clone this repository and pip install the `requirements.txt` file.
 
-Synchronize your videos by setting the path to your freemocap data folder, your sessionID, and the file types of your videos into `skelly_synchronize.py`, then run the file. The sessionID should be the name of a subfolder of your freemocap data folder, and should contain a subfolder called `RawVideos` containing the videos that need synching.
+Synchronize your videos by setting the path to your folder of raw videos and the file types of your videos into `skelly_synchronize.py`, lines 343-344, then run the file. 
 
 ![Main](https://user-images.githubusercontent.com/24758117/220470598-580360ef-8d4f-447c-820e-cc4d2d544c07.png)
 
