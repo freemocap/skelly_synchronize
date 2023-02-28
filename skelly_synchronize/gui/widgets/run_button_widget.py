@@ -10,7 +10,7 @@ class RunButtonWidget(QWidget):
 
         self.run_button_widget = QPushButton("Run", self)
 
-        self.run_button_widget.clicked.connect(self.run_script)
+        # self.run_button_widget.clicked.connect(self.run_script)
 
     def run_script(self):
         print("Running a print statement!")

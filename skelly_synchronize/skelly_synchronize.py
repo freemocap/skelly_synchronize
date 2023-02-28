@@ -11,7 +11,6 @@ from typing import Dict
 logging.basicConfig(level=logging.INFO)
 
 from utils.get_video_files import get_video_file_list
-from gui.skelly_synchronize_gui import main
 
 
 class VideoSynchronize:
@@ -321,10 +320,10 @@ class VideoSynchronize:
 
         return normalized_lag_dictionary
 
-'''def main(sessionID: str, fmc_data_path: Path, file_type: str):
+
+def synchronize_videos(session_folder_path: Path, file_type=".mp4"):
     # start timer to measure performance
     start_timer = time.time()
-    session_folder_path = fmc_data_path / sessionID
 
     raw_video_folder_name = "RawVideos"
     raw_video_folder_path = session_folder_path / raw_video_folder_name
@@ -340,13 +339,11 @@ class VideoSynchronize:
     # calculate and display elapsed processing time
     elapsed_time = end_timer - start_timer
     logging.info(f"Elapsed processing time in seconds: {elapsed_time}")
-'''
+
 
 if __name__ == "__main__":
-    main()
-    '''sessionID = "iPhoneTesting"
-    freemocap_data_path = Path(
-        "/Users/philipqueen/Documents/Humon Research Lab/FreeMocap_Data"
-    )
+    sessionID = "sessionID"
+    freemocap_data_path = Path("data/path/here")
+    session_folder_path = freemocap_data_path / sessionID
     file_type = "MP4"
-    main(sessionID, freemocap_data_path, file_type)'''
+    synchronize_videos(session_folder_path, file_type)
