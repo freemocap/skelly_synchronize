@@ -18,18 +18,20 @@ class MainWindow(QMainWindow):
         super().__init__()
         self._folder_path = None
 
-        self.setGeometry(100, 100, 600, 600)
+        self.setGeometry(100, 100, 600, 300)
 
         widget = QWidget()
         self._layout = QVBoxLayout()
         widget.setLayout(self._layout)
         self.setCentralWidget(widget)
 
-        self.folder_open_button = QPushButton("Load a folder")
+        self.folder_open_button = QPushButton("Load folder of raw videos")
         self._layout.addWidget(self.folder_open_button)
         self.folder_open_button.clicked.connect(self._open_session_folder_dialog)
 
-        self.folder_path_label = QLabel(f"Your chosen folder is: {self._folder_path}")
+        self.folder_path_label = QLabel(
+            f"Selected folder of raw videos: {self._folder_path}"
+        )
         self.folder_path_label.setFixedHeight(15)
         self._layout.addWidget(self.folder_path_label)
 
@@ -43,7 +45,9 @@ class MainWindow(QMainWindow):
     def _open_session_folder_dialog(self):
         folder_input = QFileDialog.getExistingDirectory(None, "Choose a folder")
         self._folder_path = Path(folder_input)
-        self.folder_path_label.setText(f"Your chosen folder is: {self._folder_path}")
+        self.folder_path_label.setText(
+            f"Selected folder of raw videos: {self._folder_path}"
+        )
         self.run_button.run_button_widget.setEnabled(True)
 
 
