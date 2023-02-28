@@ -28,7 +28,7 @@ keywords = ["basic",
 dependencies = [
 "pytest",
 "librosa",
-"moviepy",
+"PyQt6",
 "numpy",
 "scipy",
 "setuptools",

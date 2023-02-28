@@ -2,7 +2,6 @@ import librosa
 import time
 import logging
 import subprocess
-import moviepy.editor as mp
 import numpy as np
 from scipy import signal
 from pathlib import Path
