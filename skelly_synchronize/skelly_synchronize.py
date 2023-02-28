@@ -321,13 +321,11 @@ class VideoSynchronize:
         return normalized_lag_dictionary
 
 
-def synchronize_videos(session_folder_path: Path, file_type=".mp4"):
+def synchronize_videos(raw_video_folder_path: Path, file_type=".mp4"):
     # start timer to measure performance
     start_timer = time.time()
 
-    raw_video_folder_name = "RawVideos"
-    raw_video_folder_path = session_folder_path / raw_video_folder_name
-
+    session_folder_path = raw_video_folder_path.parent.absolute()
     video_file_list = get_video_file_list(raw_video_folder_path, ".mp4")
 
     synchronize = VideoSynchronize()
@@ -342,8 +340,6 @@ def synchronize_videos(session_folder_path: Path, file_type=".mp4"):
 
 
 if __name__ == "__main__":
-    sessionID = "sessionID"
-    freemocap_data_path = Path("data/path/here")
-    session_folder_path = freemocap_data_path / sessionID
+    raw_video_folder_path = Path("path/to/your/folder/of/raw/videos")
     file_type = "MP4"
-    synchronize_videos(session_folder_path, file_type)
+    synchronize_videos(raw_video_folder_path, file_type)

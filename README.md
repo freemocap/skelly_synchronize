@@ -11,7 +11,7 @@ Skelly_synchronize can be installed through pip by running `pip install skelly_s
 The following requirements must be met for the script to function:
 
 1. Videos must have audio
-2. Videos must be in the same file format
+2. Videos must be in the same file format (default is ".mp4")
 3. Videos must have overlapping audio from the same real world event
 4. Videos must be in a folder titled "RawVideos", with no other videos in the folder
 
