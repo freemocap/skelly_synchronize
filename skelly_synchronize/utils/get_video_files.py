@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 
 
@@ -14,6 +15,9 @@ def get_video_file_list(folder_path: Path, file_type: str) -> list:
     )  # if two capitalization standards are used, the videos may not be in original order
     # because glob behaves differently on windows vs. mac/linux, we collect all files both upper and lowercase, and remove redundant files that appear on windows
     unique_video_filepath_list = get_unique_list(video_filepath_list)
+
+    logging.info(f"{len(unique_video_filepath_list)} videos found in folder")
+
     return unique_video_filepath_list
 
 

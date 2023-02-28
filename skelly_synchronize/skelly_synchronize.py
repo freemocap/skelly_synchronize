@@ -321,10 +321,9 @@ class VideoSynchronize:
         return normalized_lag_dictionary
 
 
-def main(sessionID: str, fmc_data_path: Path, file_type: str):
+def synchronize_videos(session_folder_path: Path, file_type=".mp4"):
     # start timer to measure performance
     start_timer = time.time()
-    session_folder_path = fmc_data_path / sessionID
 
     raw_video_folder_name = "RawVideos"
     raw_video_folder_path = session_folder_path / raw_video_folder_name
@@ -343,9 +342,8 @@ def main(sessionID: str, fmc_data_path: Path, file_type: str):
 
 
 if __name__ == "__main__":
-    sessionID = "iPhoneTesting"
-    freemocap_data_path = Path(
-        "/Users/philipqueen/Documents/Humon Research Lab/FreeMocap_Data"
-    )
+    sessionID = "sessionID"
+    freemocap_data_path = Path("data/path/here")
+    session_folder_path = freemocap_data_path / sessionID
     file_type = "MP4"
-    main(sessionID, freemocap_data_path, file_type)
+    synchronize_videos(session_folder_path, file_type)
