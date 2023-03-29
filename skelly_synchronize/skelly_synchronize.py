@@ -28,7 +28,7 @@ class VideoSynchronize:
         self.synchronized_folder_path = (
             session_folder_path / synchronized_video_folder_name
         )
-        audio_folder_name = "AudioFiles"
+        audio_folder_name = "audio_files"
         self.audio_folder_path = session_folder_path / audio_folder_name
 
         # create synchronized video and audio file folders
@@ -43,14 +43,14 @@ class VideoSynchronize:
 
         # get video fps and audio sample rate
         fps_list = self._get_fps_list(video_info_dict)
-        audio_sample_rates = self.get_audio_sample_rates(audio_signal_dict)
+        audio_sample_rates = self._get_audio_sample_rates(audio_signal_dict)
 
         # frame rates and audio sample rates must be the same duration for the trimming process to work correctly
         self._check_rates(fps_list)
-        self._check_rates(audio_sample_rates)
+        audio_sample_rate = self._check_rates(audio_sample_rates)
 
         # find the lags between starting times
-        lag_dict = self._find_lags(audio_signal_dict, audio_sample_rates[0])
+        lag_dict = self._find_lags(audio_signal_dict, audio_sample_rate)
 
         synched_video_names = self._trim_videos(video_info_dict, lag_dict)
         return synched_video_names
@@ -91,10 +91,14 @@ class VideoSynchronize:
             audio_signal, audio_rate = librosa.load(
                 self.audio_folder_path / audio_name, sr=None
             )
+
+            audio_duration = librosa.get_duration(y=audio_signal, sr=audio_rate)
+            logging.info(f"audio file {audio_name} is {audio_duration} seconds long")
             audio_signal_dict[audio_name] = {
                 "audio file": audio_signal,
                 "sample rate": audio_rate,
                 "camera name": video_dict["camera name"],
+                "audio duration": audio_duration,
             }
 
         return audio_signal_dict
@@ -108,7 +112,7 @@ class VideoSynchronize:
             raise Exception("no rates given")
 
         if rate_list.count(rate_list[0]) == len(rate_list):
-            logging.debug(f"all rates are equal to {rate_list[0]}")
+            logging.info(f"all rates are equal to {rate_list[0]}")
             return rate_list[0]
         else:
             raise Exception(f"rates are not equal, rates are {rate_list}")
@@ -118,6 +122,10 @@ class VideoSynchronize:
         The lag list is normalized so that the lag of the latest video to start in time is 0, and all other lags are positive.
         """
         comparison_file_key = next(iter(audio_signal_dict))
+        logging.info(
+            f"comparison file is: {comparison_file_key}, sample rate is: {sample_rate}"
+        )
+
         lag_dict = {
             single_audio_dict["camera name"]: self._cross_correlate(
                 audio_signal_dict[comparison_file_key]["audio file"],
@@ -125,12 +133,12 @@ class VideoSynchronize:
             )
             / sample_rate
             for single_audio_dict in audio_signal_dict.values()
-        }  # cross correlates all audio to the first audio file in the list, and divides by the audio sample rate in order to get the lag in seconds
+        }  # cross correlates all audio to the first audio file in the dict, and divides by the audio sample rate in order to get the lag in seconds
 
         normalized_lag_dict = self._normalize_lag_dictionary(lag_dict)
 
-        logging.debug(
-            f"original lag list: {lag_dict} normalized lag list: {normalized_lag_dict}"
+        logging.info(
+            f"original lag dict: {lag_dict} normalized lag dict: {normalized_lag_dict}"
         )
 
         return normalized_lag_dict
@@ -153,6 +161,7 @@ class VideoSynchronize:
                 synced_video_name
             )  # add new name to list to reference for plotting
             logging.info(f"Saving video - Cam name: {video_dict['camera name']}")
+            logging.info(f"desired saving duration is: {min_duration}")
             self._trim_single_video_ffmpeg(
                 input_video_pathstring=video_dict["video pathstring"],
                 start_time=lag_dict[video_dict["camera name"]],
@@ -261,7 +270,7 @@ class VideoSynchronize:
             stderr=subprocess.STDOUT,
         )
 
-    def get_audio_sample_rates(self, audio_signal_dict: Dict[str, float]) -> list:
+    def _get_audio_sample_rates(self, audio_signal_dict: Dict[str, float]) -> list:
         """Get the sample rates of each audio file and return them in a list"""
         audio_sample_rate_list = [
             single_audio_dict["sample rate"]
@@ -278,7 +287,7 @@ class VideoSynchronize:
 
     def _cross_correlate(self, audio1, audio2):
         """Take two audio files, synchronize them using cross correlation, and trim them to the same length.
-        Inputs are two WAV files to be synchronizeded. Return the lag expressed in terms of the audio sample rate of the clips.
+        Inputs are two WAV files to be synchronized. Return the lag expressed in terms of the audio sample rate of the clips.
         """
 
         # compute cross correlation with scipy correlate function, which gives the correlation of every different lag value
