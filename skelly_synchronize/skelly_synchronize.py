@@ -2,6 +2,7 @@ import librosa
 import time
 import logging
 import subprocess
+import cv2
 import numpy as np
 from scipy import signal
 from pathlib import Path
@@ -19,9 +20,15 @@ class VideoSynchronize:
         """Initialize VideoSynchronize class"""
         logging.debug("VideoSynchronize class initialized")
 
-    def synchronize(self, session_folder_path: Path, video_file_list: list) -> list:
+    def synchronize(
+        self,
+        session_folder_path: Path,
+        video_file_list: list,
+        video_handler: str = "opencv",
+    ) -> list:
         """Run the functions from the VideoSynchronize class to synchronize all videos with the given file type in the base path folder.
-        Uses FFmpeg to handle the video files.
+        Uses opencv to handle the video files as default, set "video_handler" to "ffmpeg" to use ffmpeg methods instead.
+        ffmpeg is used to get audio from the video files with either method.
         """
 
         synchronized_video_folder_name = "SyncedVideos"
@@ -36,7 +43,7 @@ class VideoSynchronize:
         self.audio_folder_path.mkdir(parents=False, exist_ok=True)
 
         # create dictionaries with video and audio information
-        video_info_dict = self._get_video_info_dict(video_file_list)
+        video_info_dict = self._get_video_info_dict(video_file_list, "ffmpeg")
         audio_signal_dict = self._get_audio_files(
             video_info_dict, audio_extension="wav"
         )
@@ -46,16 +53,20 @@ class VideoSynchronize:
         audio_sample_rates = self._get_audio_sample_rates(audio_signal_dict)
 
         # frame rates and audio sample rates must be the same duration for the trimming process to work correctly
-        self._check_rates(fps_list)
+        fps = self._check_rates(fps_list)
         audio_sample_rate = self._check_rates(audio_sample_rates)
 
         # find the lags between starting times
         lag_dict = self._find_lags(audio_signal_dict, audio_sample_rate)
 
-        synched_video_names = self._trim_videos(video_info_dict, lag_dict)
+        synched_video_names = self._trim_videos(
+            video_info_dict, lag_dict, fps, video_handler
+        )
         return synched_video_names
 
-    def _get_video_info_dict(self, video_filepath_list: list) -> Dict[str, dict]:
+    def _get_video_info_dict(
+        self, video_filepath_list: list, video_handler: str = "opencv"
+    ) -> Dict[str, dict]:
         video_info_dict = dict()
         for video_filepath in video_filepath_list:
             video_dict = dict()
@@ -64,13 +75,24 @@ class VideoSynchronize:
             video_name = str(video_filepath).split("/")[-1]
             video_dict["camera name"] = video_name.split(".")[0]
 
-            video_dict["video duration"] = self._extract_video_duration_ffmpeg(
-                str(video_filepath)
-            )
-            video_dict["video fps"] = self._extract_video_fps_ffmpeg(
-                str(video_filepath)
-            )
-            video_info_dict[video_name] = video_dict
+            if video_handler == "ffmpeg":
+                video_dict["video duration"] = self._extract_video_duration_ffmpeg(
+                    str(video_filepath)
+                )
+                video_dict["video fps"] = self._extract_video_fps_ffmpeg(
+                    str(video_filepath)
+                )
+                video_info_dict[video_name] = video_dict
+            if video_handler == "opencv":
+                # open capture function
+                video_dict["video duration"] = self._extract_video_duration_opencv(
+                    str(video_filepath)
+                )
+                video_dict["video fps"] = self._extract_video_fps_opencv(
+                    str(video_filepath)
+                )
+                # close capture function
+                video_info_dict[video_name] = video_dict
 
         return video_info_dict
 
@@ -144,11 +166,16 @@ class VideoSynchronize:
         return normalized_lag_dict
 
     def _trim_videos(
-        self, video_info_dict: Dict[str, dict], lag_dict: Dict[str, float]
+        self,
+        video_info_dict: Dict[str, dict],
+        lag_dict: Dict[str, float],
+        fps: float,
+        video_handler: str = "opencv",
     ) -> list:
         """Take a list of video files and a list of lags, and make all videos start and end at the same time."""
 
-        min_duration = self._find_minimum_video_duration(video_info_dict, lag_dict)
+        minimum_duration = self._find_minimum_video_duration(video_info_dict, lag_dict)
+        minimum_frames = int(minimum_duration * fps)
         trimmed_video_filenames = []  # can be used for plotting
 
         for video_dict in video_info_dict.values():
@@ -160,19 +187,39 @@ class VideoSynchronize:
             trimmed_video_filenames.append(
                 synced_video_name
             )  # add new name to list to reference for plotting
-            logging.info(f"Saving video - Cam name: {video_dict['camera name']}")
-            logging.info(f"desired saving duration is: {min_duration}")
-            self._trim_single_video_ffmpeg(
-                input_video_pathstring=video_dict["video pathstring"],
-                start_time=lag_dict[video_dict["camera name"]],
-                desired_duration=min_duration,
-                output_video_pathstring=str(
-                    self.synchronized_folder_path / synced_video_name
-                ),
-            )
-            logging.info(
-                f"Video Saved - Cam name: {video_dict['camera name']}, Video Duration: {min_duration}"
-            )
+
+            start_time = lag_dict[video_dict["camera name"]]
+            start_frame = int(start_time * fps)
+
+            if video_handler == "ffmpeg":
+                logging.info(f"Saving video - Cam name: {video_dict['camera name']}")
+                logging.info(f"desired saving duration is: {minimum_duration} seconds")
+                if video_handler == "ffmpeg":
+                    self._trim_single_video_ffmpeg(
+                        input_video_pathstring=video_dict["video pathstring"],
+                        start_time=start_time,
+                        desired_duration=minimum_duration,
+                        output_video_pathstring=str(
+                            self.synchronized_folder_path / synced_video_name
+                        ),
+                    )
+                logging.info(
+                    f"Video Saved - Cam name: {video_dict['camera name']}, Video Duration in Seconds: {minimum_duration}"
+                )
+            if video_handler == "opencv":
+                logging.info(f"Saving video - Cam name: {video_dict['camera name']}")
+                logging.info(f"start frame is: {start_frame} desired saving duration is: {minimum_frames} frames")
+                self._trim_single_video_opencv(
+                    input_video_pathstring=video_dict["video pathstring"],
+                    start_frame=start_frame,
+                    desired_duration_frames=minimum_frames,
+                    output_video_pathstring=str(
+                        self.synchronized_folder_path / synced_video_name
+                    ),
+                )
+                logging.info(
+                    f"Video Saved - Cam name: {video_dict['camera name']}, Video Duration in Frames: {minimum_frames}"
+                )
 
         return trimmed_video_filenames
 
@@ -244,6 +291,60 @@ class VideoSynchronize:
         video_fps = float(int(numerator) / int(denominator))
 
         return video_fps
+
+    def _trim_single_video_opencv(
+        self,
+        input_video_pathstring: str,
+        start_frame: int,
+        desired_duration_frames: int,
+        output_video_pathstring: str,
+    ):
+        """Trim a video from the start frame to last a desired amount of frames using opencv's VideoWriter"""
+        logging.info(f"opening capture object for {input_video_pathstring}")
+        input_video_capture = cv2.VideoCapture(input_video_pathstring)
+
+        frame_width = int(input_video_capture.get(cv2.CAP_PROP_FRAME_WIDTH))
+        frame_height = int(input_video_capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        fps = int(input_video_capture.get(cv2.CAP_PROP_FPS))
+
+        logging.info(
+            f"frame width: {frame_width} frame height: {frame_height} fps: {fps}"
+        )
+        logging.info(f"original video frame count: {input_video_capture.get(cv2.CAP_PROP_FRAME_COUNT)}")
+
+        fourcc = cv2.VideoWriter_fourcc(*"H264")
+        logging.info(f"creating video writer object for {output_video_pathstring}")
+        video_writer_object = cv2.VideoWriter(
+            output_video_pathstring, fourcc, fps, (frame_width, frame_height)
+        )
+
+        current_frame = 0
+        written_frames = 0
+
+        logging.info(f"writing video...")
+        while True:
+            success, frame = input_video_capture.read()
+            if not success:
+                break
+
+            if (
+                current_frame >= start_frame
+                and written_frames < desired_duration_frames
+            ):
+                video_writer_object.write(frame)
+                written_frames += 1
+
+            if written_frames == desired_duration_frames:
+                break
+
+            logging.info(f"current frame: {current_frame} written_frames: {written_frames}")
+            current_frame += 1
+
+
+        logging.info(f"releasing capture object for {input_video_pathstring}")
+        input_video_capture.release()
+        logging.info(f"releasing video writer object for {output_video_pathstring}")
+        video_writer_object.release()
 
     def _trim_single_video_ffmpeg(
         self,
