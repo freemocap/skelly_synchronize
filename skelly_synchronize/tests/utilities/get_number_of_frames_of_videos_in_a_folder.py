@@ -31,5 +31,5 @@ def get_number_of_frames_of_videos_in_a_folder(folder_path: Union[str, Path]):
     return frame_count_list
 
 if __name__ == "__main__":
-    folder_path = Path("/Users/philipqueen/Documents/Humon Research Lab/FreeMocap_Data/iPhoneTesting/SyncedVideos")
+    folder_path = Path("YOUR/FOLDER/PATH")
     print(get_number_of_frames_of_videos_in_a_folder(folder_path))

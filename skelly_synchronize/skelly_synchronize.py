@@ -12,7 +12,9 @@ from deffcode import FFdecoder
 
 logging.basicConfig(level=logging.INFO)
 
-from utils.get_video_files import get_video_file_list
+from skelly_synchronize.utils.get_video_files import get_video_file_list
+from skelly_synchronize.tests.utilities.check_list_values_are_equal import check_list_values_are_equal
+from skelly_synchronize.tests.utilities.get_number_of_frames_of_videos_in_a_folder import get_number_of_frames_of_videos_in_a_folder
 
 class VideoSynchronize:
     """Class of functions for time synchronizing and trimming video files based on cross correlation of their audio."""
@@ -28,7 +30,7 @@ class VideoSynchronize:
         video_handler: str = "deffcode",
     ) -> list:
         """Run the functions from the VideoSynchronize class to synchronize all videos with the given file type in the base path folder.
-        Uses deffcode and opencv to handle the video files as default, set "video_handler" to "ffmpeg" to use ffmpeg methods instead.
+        Uses deffcode and to handle the video files as default, set "video_handler" to "ffmpeg" to use ffmpeg methods instead.
         ffmpeg is used to get audio from the video files with either method.
         """
 
@@ -58,8 +60,8 @@ class VideoSynchronize:
         )
 
         # frame rates and audio sample rates must be the same duration for the trimming process to work correctly
-        fps = self._check_rates(rate_list=fps_list)
-        audio_sample_rate = self._check_rates(rate_list=audio_sample_rates)
+        fps = check_list_values_are_equal(input_list=fps_list)
+        audio_sample_rate = check_list_values_are_equal(input_list=audio_sample_rates)
 
         # find the lags between starting times
         lag_dict = self._find_lags(
@@ -72,6 +74,10 @@ class VideoSynchronize:
             fps=fps,
             video_handler=video_handler,
         )
+
+        synchronized_video_framecounts = get_number_of_frames_of_videos_in_a_folder(folder_path=self.synchronized_folder_path)
+        logging.info(f"All video framerates are equal to {check_list_values_are_equal(synchronized_video_framecounts)}")
+
         return synched_video_names
 
     def _get_video_info_dict(
@@ -140,17 +146,6 @@ class VideoSynchronize:
     def _get_fps_list(self, video_info_dict: Dict[str, dict]):
         """Get list of the frames per second in earch video"""
         return [video_dict["video fps"] for video_dict in video_info_dict.values()]
-
-    def _check_rates(self, rate_list: list):
-        """Check if audio sample rates or video frame rates are equal, throw an exception if not (or if no rates are given)."""
-        if len(rate_list) == 0:
-            raise Exception("no rates given")
-
-        if rate_list.count(rate_list[0]) == len(rate_list):
-            logging.info(f"all rates are equal to {rate_list[0]}")
-            return rate_list[0]
-        else:
-            raise Exception(f"rates are not equal, rates are {rate_list}")
 
     def _find_lags(self, audio_signal_dict: dict, sample_rate: int) -> Dict[str, float]:
         """Take a file list containing video and audio files, as well as the sample rate of the audio, cross correlate the audio files, and output a lag list.
