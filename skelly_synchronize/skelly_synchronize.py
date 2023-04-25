@@ -302,59 +302,6 @@ class VideoSynchronize:
 
         return video_fps
 
-    def _trim_single_video_opencv(
-        self,
-        input_video_pathstring: str,
-        frame_list: list,
-        output_video_pathstring: str,
-    ):
-        """Trim a video from the start frame to last a desired amount of frames using opencv's VideoWriter"""
-        logging.info(f"opening capture object for {input_video_pathstring}")
-        input_video_capture = cv2.VideoCapture(input_video_pathstring)
-
-        frame_width = int(input_video_capture.get(cv2.CAP_PROP_FRAME_WIDTH))
-        frame_height = int(input_video_capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
-        fps = int(input_video_capture.get(cv2.CAP_PROP_FPS))
-
-        logging.info(
-            f"frame width: {frame_width} frame height: {frame_height} fps: {fps}"
-        )
-        logging.info(
-            f"original video frame count: {input_video_capture.get(cv2.CAP_PROP_FRAME_COUNT)}"
-        )
-
-        fourcc = cv2.VideoWriter_fourcc(*"H264")
-        logging.info(f"creating video writer object for {output_video_pathstring}")
-        video_writer_object = cv2.VideoWriter(
-            output_video_pathstring, fourcc, fps, (frame_width, frame_height)
-        )
-
-        current_frame = 0
-        written_frames = 0
-
-        logging.info(f"writing video...")
-        while True:
-            success, frame = input_video_capture.read()
-            if not success:
-                break
-
-            if current_frame in frame_list:
-                video_writer_object.write(frame)
-                written_frames += 1
-
-            if written_frames == len(frame_list):
-                break
-
-            logging.info(
-                f"current frame: {current_frame} written_frames: {written_frames}"
-            )
-            current_frame += 1
-
-        logging.info(f"releasing capture object for {input_video_pathstring}")
-        input_video_capture.release()
-        logging.info(f"releasing video writer object for {output_video_pathstring}")
-        video_writer_object.release()
-
     def _trim_single_video_deffcode(
         self,
         input_video_pathstring: str,
@@ -380,9 +327,7 @@ class VideoSynchronize:
         current_frame = 0
         written_frames = 0
 
-        # grab the BGR24 frame from the decoder
         for frame in decoder.generateFrame():
-            # check if frame is None
             if frame is None:
                 break
 
@@ -395,10 +340,7 @@ class VideoSynchronize:
 
             current_frame += 1
 
-        # terminate the decoder
         decoder.terminate()
-
-        # safely close writer
         video_writer_object.release()
 
     def _trim_single_video_ffmpeg(
