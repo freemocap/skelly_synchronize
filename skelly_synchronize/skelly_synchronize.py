@@ -13,7 +13,7 @@ from deffcode import FFdecoder
 logging.basicConfig(level=logging.INFO)
 
 from skelly_synchronize.utils.get_video_files import get_video_file_list
-from skelly_synchronize.utils.path_handling_utilities import get_parent_directory, get_file_name
+from skelly_synchronize.utils.path_handling_utilities import get_parent_directory, get_file_name, create_directory
 from skelly_synchronize.tests.utilities.check_list_values_are_equal import check_list_values_are_equal
 from skelly_synchronize.tests.utilities.get_number_of_frames_of_videos_in_a_folder import get_number_of_frames_of_videos_in_a_folder
 
@@ -35,16 +35,8 @@ class VideoSynchronize:
         ffmpeg is used to get audio from the video files with either method.
         """
 
-        synchronized_video_folder_name = "SyncedVideos"
-        self.synchronized_folder_path = (
-            session_folder_path / synchronized_video_folder_name
-        )
-        audio_folder_name = "audio_files"
-        self.audio_folder_path = session_folder_path / audio_folder_name
-
-        # create synchronized video and audio file folders
-        self.synchronized_folder_path.mkdir(parents=False, exist_ok=True)
-        self.audio_folder_path.mkdir(parents=False, exist_ok=True)
+        self.synchronized_folder_path = create_directory(parent_directory=session_folder_path, directory_name="synchronized_videos")
+        self.audio_folder_path = create_directory(parent_directory=session_folder_path, directory_name="audio_files")
 
         # create dictionaries with video and audio information
         video_info_dict = self._get_video_info_dict(
@@ -69,7 +61,7 @@ class VideoSynchronize:
             audio_signal_dict=audio_signal_dict, sample_rate=audio_sample_rate
         )
 
-        synched_video_names = self._trim_videos(
+        self._trim_videos(
             video_info_dict=video_info_dict,
             lag_dict=lag_dict,
             fps=fps,
@@ -79,7 +71,6 @@ class VideoSynchronize:
         synchronized_video_framecounts = get_number_of_frames_of_videos_in_a_folder(folder_path=self.synchronized_folder_path)
         logging.info(f"All videos are {check_list_values_are_equal(synchronized_video_framecounts)} frames long")
 
-        return synched_video_names
 
     def _get_video_info_dict(
         self, video_filepath_list: list, video_handler: str = "ffmpeg"
@@ -91,7 +82,7 @@ class VideoSynchronize:
             video_dict["video filepath"] = video_filepath
             video_dict["video pathstring"] = str(video_filepath)
             video_name = get_file_name(video_filepath)
-            video_dict["camera name"] = video_name.split(".")[0]
+            video_dict["camera name"] = video_name
 
             if video_handler == "ffmpeg":
                 video_dict["video duration"] = self._extract_video_duration_ffmpeg(
@@ -100,7 +91,8 @@ class VideoSynchronize:
                 video_dict["video fps"] = self._extract_video_fps_ffmpeg(
                     file_pathstring=str(video_filepath)
                 )
-                video_info_dict[video_name] = video_dict
+
+            video_info_dict[video_name] = video_dict
 
         return video_info_dict
 
@@ -119,15 +111,15 @@ class VideoSynchronize:
 
             audio_name = video_dict["camera name"] + "." + audio_extension
 
-            audio_signal, audio_rate = librosa.load(
+            audio_signal, sample_rate = librosa.load(
                 path=self.audio_folder_path / audio_name, sr=None
             )
 
-            audio_duration = librosa.get_duration(y=audio_signal, sr=audio_rate)
+            audio_duration = librosa.get_duration(y=audio_signal, sr=sample_rate)
             logging.info(f"audio file {audio_name} is {audio_duration} seconds long")
             audio_signal_dict[audio_name] = {
                 "audio file": audio_signal,
-                "sample rate": audio_rate,
+                "sample rate": sample_rate,
                 "camera name": video_dict["camera name"],
                 "audio duration": audio_duration,
             }
@@ -175,14 +167,10 @@ class VideoSynchronize:
 
         minimum_duration = self._find_minimum_video_duration(video_info_dict=video_info_dict, lag_dict=lag_dict)
         minimum_frames = int(minimum_duration * fps)
-        trimmed_video_filenames = []  # can be used for plotting
 
         for video_dict in video_info_dict.values():
             logging.debug(f"trimming video file {video_dict['camera name']}")
             synced_video_name = self._name_synced_video(raw_video_filename=video_dict["camera name"])
-            trimmed_video_filenames.append(
-                synced_video_name
-            )  # add new name to list to reference for plotting
 
             start_time = lag_dict[video_dict["camera name"]]
             start_frame = int(start_time * fps)
@@ -220,9 +208,6 @@ class VideoSynchronize:
                     f"Video Saved - Cam name: {video_dict['camera name']}, Video Duration in Frames: {minimum_frames}"
                 )
 
-            # TODO add test that video duration in frames is equal to minimum_duration_frames
-
-        return trimmed_video_filenames
 
     def _extract_audio_from_video_ffmpeg(
         self,
