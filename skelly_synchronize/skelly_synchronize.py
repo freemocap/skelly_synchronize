@@ -13,6 +13,7 @@ from deffcode import FFdecoder
 logging.basicConfig(level=logging.INFO)
 
 from skelly_synchronize.utils.get_video_files import get_video_file_list
+from skelly_synchronize.utils.path_handling_utilities import get_parent_directory, get_file_name
 from skelly_synchronize.tests.utilities.check_list_values_are_equal import check_list_values_are_equal
 from skelly_synchronize.tests.utilities.get_number_of_frames_of_videos_in_a_folder import get_number_of_frames_of_videos_in_a_folder
 
@@ -76,7 +77,7 @@ class VideoSynchronize:
         )
 
         synchronized_video_framecounts = get_number_of_frames_of_videos_in_a_folder(folder_path=self.synchronized_folder_path)
-        logging.info(f"All video framerates are equal to {check_list_values_are_equal(synchronized_video_framecounts)}")
+        logging.info(f"All videos are {check_list_values_are_equal(synchronized_video_framecounts)} frames long")
 
         return synched_video_names
 
@@ -89,7 +90,7 @@ class VideoSynchronize:
             video_dict = dict()
             video_dict["video filepath"] = video_filepath
             video_dict["video pathstring"] = str(video_filepath)
-            video_name = str(video_filepath).split("/")[-1]
+            video_name = get_file_name(video_filepath)
             video_dict["camera name"] = video_name.split(".")[0]
 
             if video_handler == "ffmpeg":
@@ -100,16 +101,6 @@ class VideoSynchronize:
                     file_pathstring=str(video_filepath)
                 )
                 video_info_dict[video_name] = video_dict
-            # if video_handler == "opencv":
-            #     # open capture function
-            #     video_dict["video duration"] = self._extract_video_duration_opencv(
-            #         str(video_filepath)
-            #     )
-            #     video_dict["video fps"] = self._extract_video_fps_opencv(
-            #         str(video_filepath)
-            #     )
-            #     # close capture function
-            #     video_info_dict[video_name] = video_dict
 
         return video_info_dict
 
@@ -444,14 +435,14 @@ def synchronize_videos(raw_video_folder_path: Path, file_type: str = ".mp4"):
     # start timer to measure performance
     start_timer = time.time()
 
-    session_folder_path = raw_video_folder_path.parent.absolute()
+    session_folder_path = get_parent_directory(raw_video_folder_path)
     video_file_list = get_video_file_list(
         folder_path=raw_video_folder_path, file_type=file_type
     )
 
     synchronize = VideoSynchronize()
     synchronize.synchronize(
-        session_folder_path=session_folder_path, video_file_list=video_file_list
+        session_folder_path=session_folder_path, video_file_list=video_file_list,
     )
 
     # end performance timer
