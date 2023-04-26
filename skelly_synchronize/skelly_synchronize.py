@@ -18,6 +18,7 @@ from skelly_synchronize.utils.path_handling_utilities import (
     get_file_name,
     create_directory,
 )
+
 from skelly_synchronize.utils.check_if_video_is_vertical import (
     check_if_video_is_vertical,
 )
@@ -322,6 +323,7 @@ class VideoSynchronize:
                 verbose=True,
                 **ffparams,
             ).formulate()
+
 
         metadata_dictionary = json.loads(decoder.metadata)
 
