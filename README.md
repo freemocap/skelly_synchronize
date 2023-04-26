@@ -6,6 +6,8 @@ This package synchronizes a set of videos of the same event by cross-correlating
 
 Skelly_synchronize can be installed through pip by running `pip install skelly_synchronize` in your terminal. Once it has installed, it can be run with the command `python -m skelly_synchronize`. While running, the GUI window may appear frozen, but the terminal should show the progress. Large videos may take a significant amount of time. 
 
+Skelly_synchronize currently depends on FFmpeg, a command line tool that handles the video files. If you do not have FFmpeg downloaded, you will need to install it separately. You can download FFmpeg here: https://ffmpeg.org/download.html
+
 <img width="593" alt="Skelly_synchronize_gui_window" src="https://user-images.githubusercontent.com/24758117/221995127-340899d7-4f04-4f87-a2d7-ba1d49cd00e2.png">
 
 # Video Requirements
@@ -14,6 +16,7 @@ The following requirements must be met for the script to function:
 
 1. Videos must have audio
 2. Videos must be in the same file format (default is ".mp4")
+3. Videos must have the exact same framerate (frames per second). There are often slight differences between brands/models of camera that lead to one camera's "60 fps" being different from another's. If your frame rates do not match, an error will be thrown.
 3. All videos in folder must have overlapping audio from the same real world event
 
 
