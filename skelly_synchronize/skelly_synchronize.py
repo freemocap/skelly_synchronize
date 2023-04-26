@@ -281,7 +281,7 @@ class VideoSynchronize:
                 "-select_streams",
                 "v:0",
                 "-show_entries",
-                "stream=avg_frame_rate",
+                "stream=r_frame_rate",
                 "-of",
                 "default=noprint_wrappers=1:nokey=1",
                 file_pathstring,
