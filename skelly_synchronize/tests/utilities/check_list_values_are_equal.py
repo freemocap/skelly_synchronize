@@ -1,6 +1,7 @@
 import logging
 from typing import Any, List
 
+
 def check_list_values_are_equal(input_list: List[Any]) -> Any:
     """Check if values in list are all equal, throw an exception if not (or if list is empty)."""
     unique_values = set(input_list)

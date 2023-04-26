@@ -13,9 +13,18 @@ from deffcode import FFdecoder
 logging.basicConfig(level=logging.INFO)
 
 from skelly_synchronize.utils.get_video_files import get_video_file_list
-from skelly_synchronize.utils.path_handling_utilities import get_parent_directory, get_file_name, create_directory
-from skelly_synchronize.tests.utilities.check_list_values_are_equal import check_list_values_are_equal
-from skelly_synchronize.tests.utilities.get_number_of_frames_of_videos_in_a_folder import get_number_of_frames_of_videos_in_a_folder
+from skelly_synchronize.utils.path_handling_utilities import (
+    get_parent_directory,
+    get_file_name,
+    create_directory,
+)
+from skelly_synchronize.tests.utilities.check_list_values_are_equal import (
+    check_list_values_are_equal,
+)
+from skelly_synchronize.tests.utilities.get_number_of_frames_of_videos_in_a_folder import (
+    get_number_of_frames_of_videos_in_a_folder,
+)
+
 
 class VideoSynchronize:
     """Class of functions for time synchronizing and trimming video files based on cross correlation of their audio."""
@@ -35,8 +44,12 @@ class VideoSynchronize:
         ffmpeg is used to get audio from the video files with either method.
         """
 
-        self.synchronized_folder_path = create_directory(parent_directory=session_folder_path, directory_name="synchronized_videos")
-        self.audio_folder_path = create_directory(parent_directory=session_folder_path, directory_name="audio_files")
+        self.synchronized_folder_path = create_directory(
+            parent_directory=session_folder_path, directory_name="synchronized_videos"
+        )
+        self.audio_folder_path = create_directory(
+            parent_directory=session_folder_path, directory_name="audio_files"
+        )
 
         # create dictionaries with video and audio information
         video_info_dict = self._get_video_info_dict(
@@ -68,9 +81,12 @@ class VideoSynchronize:
             video_handler=video_handler,
         )
 
-        synchronized_video_framecounts = get_number_of_frames_of_videos_in_a_folder(folder_path=self.synchronized_folder_path)
-        logging.info(f"All videos are {check_list_values_are_equal(synchronized_video_framecounts)} frames long")
-
+        synchronized_video_framecounts = get_number_of_frames_of_videos_in_a_folder(
+            folder_path=self.synchronized_folder_path
+        )
+        logging.info(
+            f"All videos are {check_list_values_are_equal(synchronized_video_framecounts)} frames long"
+        )
 
     def _get_video_info_dict(
         self, video_filepath_list: list, video_handler: str = "ffmpeg"
@@ -165,12 +181,16 @@ class VideoSynchronize:
     ) -> list:
         """Take a list of video files and a list of lags, and make all videos start and end at the same time."""
 
-        minimum_duration = self._find_minimum_video_duration(video_info_dict=video_info_dict, lag_dict=lag_dict)
+        minimum_duration = self._find_minimum_video_duration(
+            video_info_dict=video_info_dict, lag_dict=lag_dict
+        )
         minimum_frames = int(minimum_duration * fps)
 
         for video_dict in video_info_dict.values():
             logging.debug(f"trimming video file {video_dict['camera name']}")
-            synced_video_name = self._name_synced_video(raw_video_filename=video_dict["camera name"])
+            synced_video_name = self._name_synced_video(
+                raw_video_filename=video_dict["camera name"]
+            )
 
             start_time = lag_dict[video_dict["camera name"]]
             start_frame = int(start_time * fps)
@@ -207,7 +227,6 @@ class VideoSynchronize:
                 logging.info(
                     f"Video Saved - Cam name: {video_dict['camera name']}, Video Duration in Frames: {minimum_frames}"
                 )
-
 
     def _extract_audio_from_video_ffmpeg(
         self,
@@ -262,7 +281,7 @@ class VideoSynchronize:
                 "-select_streams",
                 "v:0",
                 "-show_entries",
-                "stream=r_frame_rate",
+                "stream=avg_frame_rate",
                 "-of",
                 "default=noprint_wrappers=1:nokey=1",
                 file_pathstring,
@@ -287,7 +306,6 @@ class VideoSynchronize:
         decoder = FFdecoder(
             input_video_pathstring,
             frame_format="bgr24",
-            verbose=True,
         ).formulate()
 
         metadata_dictionary = json.loads(decoder.metadata)
@@ -427,7 +445,8 @@ def synchronize_videos(raw_video_folder_path: Path, file_type: str = ".mp4"):
 
     synchronize = VideoSynchronize()
     synchronize.synchronize(
-        session_folder_path=session_folder_path, video_file_list=video_file_list,
+        session_folder_path=session_folder_path,
+        video_file_list=video_file_list,
     )
 
     # end performance timer
