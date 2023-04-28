@@ -19,8 +19,8 @@ from skelly_synchronize.utils.path_handling_utilities import (
     create_directory,
 )
 
-from skelly_synchronize.utils.check_if_video_is_vertical import (
-    check_if_video_is_vertical,
+from skelly_synchronize.utils.check_if_video_has_reversed_metadata import (
+    check_if_video_has_reversed_metadata,
 )
 from skelly_synchronize.tests.utilities.check_list_values_are_equal import (
     check_list_values_are_equal,
@@ -307,12 +307,12 @@ class VideoSynchronize:
         frame_list: list,
         output_video_pathstring: str,
     ):
-        vertical_video_bool = check_if_video_is_vertical(
+        vertical_video_bool = check_if_video_has_reversed_metadata(
             video_pathstring=input_video_pathstring
         )
 
         if vertical_video_bool:
-            logging.info(f"Vertical video detected, changing FFmpeg transpose argument")
+            logging.info(f"Video has reversed metadata, changing FFmpeg transpose argument")
             ffparams = {"-ffprefixes": ["-noautorotate"], "-vf": "transpose=1"}
         else:
             ffparams = {}
