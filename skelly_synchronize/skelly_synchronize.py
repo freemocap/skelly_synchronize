@@ -18,6 +18,10 @@ from skelly_synchronize.utils.path_handling_utilities import (
     get_file_name,
     create_directory,
 )
+
+from skelly_synchronize.utils.check_if_video_has_reversed_metadata import (
+    check_if_video_has_reversed_metadata,
+)
 from skelly_synchronize.tests.utilities.check_list_values_are_equal import (
     check_list_values_are_equal,
 )
@@ -303,9 +307,23 @@ class VideoSynchronize:
         frame_list: list,
         output_video_pathstring: str,
     ):
+        vertical_video_bool = check_if_video_has_reversed_metadata(
+            video_pathstring=input_video_pathstring
+        )
+
+        if vertical_video_bool:
+            logging.info(
+                f"Video has reversed metadata, changing FFmpeg transpose argument"
+            )
+            ffparams = {"-ffprefixes": ["-noautorotate"], "-vf": "transpose=1"}
+        else:
+            ffparams = {}
+
         decoder = FFdecoder(
-            input_video_pathstring,
+            str(input_video_pathstring),
             frame_format="bgr24",
+            verbose=True,
+            **ffparams,
         ).formulate()
 
         metadata_dictionary = json.loads(decoder.metadata)
