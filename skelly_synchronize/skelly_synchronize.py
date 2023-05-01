@@ -312,18 +312,19 @@ class VideoSynchronize:
         )
 
         if vertical_video_bool:
-            logging.info(f"Video has reversed metadata, changing FFmpeg transpose argument")
+            logging.info(
+                f"Video has reversed metadata, changing FFmpeg transpose argument"
+            )
             ffparams = {"-ffprefixes": ["-noautorotate"], "-vf": "transpose=1"}
         else:
             ffparams = {}
 
         decoder = FFdecoder(
-                str(input_video_pathstring),
-                frame_format="bgr24",
-                verbose=True,
-                **ffparams,
-            ).formulate()
-
+            str(input_video_pathstring),
+            frame_format="bgr24",
+            verbose=True,
+            **ffparams,
+        ).formulate()
 
         metadata_dictionary = json.loads(decoder.metadata)
 
