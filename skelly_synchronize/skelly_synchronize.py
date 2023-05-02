@@ -466,6 +466,7 @@ def synchronize_videos(raw_video_folder_path: Path, file_type: str = ".mp4"):
         session_folder_path=session_folder_path,
         video_file_list=video_file_list,
     )
+    synchronized_video_folder_path = synchronize.synchronized_folder_path
 
     # end performance timer
     end_timer = time.time()
@@ -473,6 +474,8 @@ def synchronize_videos(raw_video_folder_path: Path, file_type: str = ".mp4"):
     # calculate and display elapsed processing time
     elapsed_time = end_timer - start_timer
     logging.info(f"Elapsed processing time in seconds: {elapsed_time}")
+
+    return synchronized_video_folder_path
 
 
 if __name__ == "__main__":
