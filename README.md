@@ -17,7 +17,12 @@ The following requirements must be met for the script to function:
 1. Videos must have audio
 2. Videos must be in the same file format (default is ".mp4")
 3. Videos must have the exact same framerate (frames per second). There are often slight differences between brands/models of camera that lead to one camera's "60 fps" being different from another's. If your frame rates do not match, an error will be thrown.
-3. All videos in folder must have overlapping audio from the same real world event
+4. Videos must have the same audio sample rate. Most cameras record either 44100 or 48000 Hz, so there are not as much variation in audio sample rates as there are in video framerates.
+5. All videos in folder must have overlapping audio from the same real world event
+
+## Downsampling
+
+If you video frame rates or audio sample rates do not match, it is possible to downsample them in a separate tool like VLC to have matching frame rates and sample rates. This must be done *before* trying to synchronize the videos using skelly_synchronize.
 
 
 # How to run from source
