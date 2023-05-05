@@ -9,7 +9,9 @@ base_package_path = Path(__file__).parent.parent.parent
 print(f"adding base_package_path: {base_package_path} : to sys.path")
 sys.path.insert(0, str(base_package_path))  # add parent directory to sys.path
 
-from skelly_synchronize.skelly_synchronize import VideoSynchronize
+from skelly_synchronize.core_processes.correlation_functions import (
+    normalize_lag_dictionary,
+)
 
 
 @pytest.fixture
@@ -23,9 +25,8 @@ def normalized_lag_dict():
 
 
 def test_normalize_lag_dict(lag_dict, normalized_lag_dict):
-    test_synchronize = VideoSynchronize()
     assert (
-        test_synchronize._normalize_lag_dictionary(lag_dict) == normalized_lag_dict
+        normalize_lag_dictionary(lag_dict) == normalized_lag_dict
     ), "Lag dict did not normalize correctly"
 
 
