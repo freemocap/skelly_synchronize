@@ -22,10 +22,14 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+      - name: Install FFmpeg
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
       - name: Run tests with pytest
         run: |
           pip install pytest
-          pytest skelly_synchronize/tests/unit_tests.py
+          pytest skelly_synchronize/tests
       - name: Upload pytest test results
         uses: actions/upload-artifact@v3
         with:

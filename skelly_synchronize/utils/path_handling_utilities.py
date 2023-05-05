@@ -53,6 +53,17 @@ def get_file_name(file_path: Union[str, Path]) -> str:
         raise
 
 
+def name_synced_video(raw_video_filename: str) -> str:
+    """Take a raw video filename, remove the raw prefix if its there, and return the synced video filename"""
+    raw_video_filename = str(raw_video_filename)
+    if raw_video_filename.split("_")[0] == "raw":
+        synced_video_name = "synced_" + raw_video_filename[4:] + ".mp4"
+    else:
+        synced_video_name = "synced_" + raw_video_filename + ".mp4"
+
+    return synced_video_name
+
+
 def ensure_path_object(path: Union[str, Path]) -> Path:
     """Ensure the input is a Path object. If the input is a string, convert it to a Path object."""
     if not isinstance(path, Path):

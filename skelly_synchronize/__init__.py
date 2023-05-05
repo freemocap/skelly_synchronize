@@ -24,6 +24,7 @@ sys.path.insert(0, str(base_package_path))  # add parent directory to sys.path
 
 from skelly_synchronize.system.default_paths import get_log_file_path
 from skelly_synchronize.system.logging_configuration import configure_logging
+from skelly_synchronize.skelly_synchronize import synchronize_videos
 
 
 configure_logging(log_file_path=get_log_file_path())
