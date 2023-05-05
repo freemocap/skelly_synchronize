@@ -30,6 +30,10 @@ from skelly_synchronize.tests.utilities.check_list_values_are_equal import (
 from skelly_synchronize.tests.utilities.get_number_of_frames_of_videos_in_a_folder import (
     get_number_of_frames_of_videos_in_a_folder,
 )
+from skelly_synchronize.system.paths_and_file_names import (
+    SYNCHRONIZED_VIDEOS_FOLDER_NAME,
+    AUDIO_FILES_FOLDER_NAME,
+)
 
 
 def synchronize_videos(
@@ -50,10 +54,11 @@ def synchronize_videos(
     )
 
     synchronized_video_folder_path = create_directory(
-        parent_directory=session_folder_path, directory_name="synchronized_videos"
+        parent_directory=session_folder_path,
+        directory_name=SYNCHRONIZED_VIDEOS_FOLDER_NAME,
     )
     audio_folder_path = create_directory(
-        parent_directory=session_folder_path, directory_name="audio_files"
+        parent_directory=session_folder_path, directory_name=AUDIO_FILES_FOLDER_NAME
     )
 
     # create dictionaries with video and audio information
