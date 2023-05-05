@@ -116,7 +116,6 @@ def synchronize_videos(
         },
         output_file_path=session_folder_path / "synchronization_debug.toml",
     )
-    synchronized_video_folder_path = synchronize.synchronized_folder_path
 
     # end performance timer
     end_timer = time.time()
