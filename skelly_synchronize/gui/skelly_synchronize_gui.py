@@ -10,7 +10,7 @@ from PyQt6.QtWidgets import (
 )
 
 from gui.widgets.run_button_widget import RunButtonWidget
-from skelly_synchronize.skelly_synchronize import synchronize_videos
+from skelly_synchronize.skelly_synchronize import synchronize_videos_from_audio
 
 
 class MainWindow(QMainWindow):
@@ -39,7 +39,7 @@ class MainWindow(QMainWindow):
         self.run_button.run_button_widget.setEnabled(False)
         self._layout.addWidget(self.run_button)
         self.run_button.run_button_widget.clicked.connect(
-            lambda: synchronize_videos(self._folder_path)
+            lambda: synchronize_videos_from_audio(self._folder_path)
         )
 
     def _open_session_folder_dialog(self):
