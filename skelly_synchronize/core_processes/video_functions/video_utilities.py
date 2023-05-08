@@ -11,12 +11,11 @@ from skelly_synchronize.core_processes.video_functions.ffmpeg_functions import (
     trim_single_video_ffmpeg,
 )
 from skelly_synchronize.utils.path_handling_utilities import (
-    get_file_name,
     name_synced_video,
 )
 
 
-def get_video_info_dict(
+def create_video_info_dict(
     video_filepath_list: list, video_handler: str = "ffmpeg"
 ) -> Dict[str, dict]:
     """Get a dictionary with video information from the given video file paths."""
@@ -25,7 +24,7 @@ def get_video_info_dict(
         video_dict = dict()
         video_dict["video filepath"] = video_filepath
         video_dict["video pathstring"] = str(video_filepath)
-        video_name = get_file_name(video_filepath)
+        video_name = video_filepath.stem
         video_dict["camera name"] = video_name
 
         if video_handler == "ffmpeg":
