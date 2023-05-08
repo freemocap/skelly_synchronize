@@ -131,4 +131,6 @@ def synchronize_videos_from_audio(
 if __name__ == "__main__":
     raw_video_folder_path = Path("path/to/your/folder/of/raw/videos")
     file_type = "MP4"
-    synchronize_videos_from_audio(raw_video_folder_path=raw_video_folder_path, file_type=file_type)
+    synchronize_videos_from_audio(
+        raw_video_folder_path=raw_video_folder_path, file_type=file_type
+    )

@@ -7,7 +7,7 @@ logging.basicConfig(level=logging.INFO)
 
 def get_parent_directory(path: Union[str, Path]) -> Path:
     """Get the parent directory of the specified path."""
-    path = ensure_path_object(path)
+    path = Path(path)
 
     logging.info(f"Input path: {path}")
 
@@ -25,7 +25,7 @@ def get_parent_directory(path: Union[str, Path]) -> Path:
 
 def create_directory(parent_directory: Path, directory_name: str) -> Path:
     """Create a new directory under the specified parent directory."""
-    parent_directory = ensure_path_object(parent_directory)
+    parent_directory = Path(parent_directory)
     new_directory_path = parent_directory / directory_name
 
     try:
@@ -38,21 +38,6 @@ def create_directory(parent_directory: Path, directory_name: str) -> Path:
     return new_directory_path
 
 
-def get_file_name(file_path: Union[str, Path]) -> str:
-    """Get the name of the file without directories or file extensions."""
-    file_path = ensure_path_object(file_path)
-
-    try:
-        file_name = file_path.stem
-        logging.info(f"Retrieved file name: {file_name} from path: {file_path}")
-        return file_name
-    except Exception as e:
-        logging.error(
-            f"Error retrieving file name from path: {file_path}. Exception: {e}"
-        )
-        raise
-
-
 def name_synced_video(raw_video_filename: str) -> str:
     """Take a raw video filename, remove the raw prefix if its there, and return the synced video filename"""
     raw_video_filename = str(raw_video_filename)
@@ -62,11 +47,3 @@ def name_synced_video(raw_video_filename: str) -> str:
         synced_video_name = "synced_" + raw_video_filename + ".mp4"
 
     return synced_video_name
-
-
-def ensure_path_object(path: Union[str, Path]) -> Path:
-    """Ensure the input is a Path object. If the input is a string, convert it to a Path object."""
-    if not isinstance(path, Path):
-        path = Path(path)
-
-    return path
