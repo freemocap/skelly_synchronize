@@ -24,7 +24,7 @@ def normalize_audio(audio_file):
     return (audio_file - np.mean(audio_file)) / np.std(audio_file - np.mean(audio_file))
 
 
-def get_audio_files(
+def extract_audio_files(
     video_info_dict: Dict[str, dict], audio_extension: str, audio_folder_path: Path
 ) -> dict:
     """Get a dictionary with audio files and information from the given video file paths."""

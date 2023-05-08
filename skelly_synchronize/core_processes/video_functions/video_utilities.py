@@ -16,7 +16,7 @@ from skelly_synchronize.utils.path_handling_utilities import (
 )
 
 
-def get_video_info_dict(
+def create_video_info_dict(
     video_filepath_list: list, video_handler: str = "ffmpeg"
 ) -> Dict[str, dict]:
     """Get a dictionary with video information from the given video file paths."""

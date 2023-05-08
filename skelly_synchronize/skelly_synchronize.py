@@ -11,13 +11,13 @@ logging.basicConfig(level=logging.INFO)
 
 from skelly_synchronize.utils.get_video_files import get_video_file_list
 from skelly_synchronize.core_processes.audio_utilities import (
-    get_audio_files,
+    extract_audio_files,
     get_audio_sample_rates,
 )
 from skelly_synchronize.core_processes.correlation_functions import find_lags
 from skelly_synchronize.core_processes.video_functions.video_utilities import (
     get_fps_list,
-    get_video_info_dict,
+    create_video_info_dict,
     trim_videos,
 )
 from skelly_synchronize.utils.path_handling_utilities import (
@@ -63,10 +63,10 @@ def synchronize_videos_from_audio(
     )
 
     # create dictionaries with video and audio information
-    video_info_dict = get_video_info_dict(
+    video_info_dict = create_video_info_dict(
         video_filepath_list=video_file_list, video_handler="ffmpeg"
     )
-    audio_signal_dict = get_audio_files(
+    audio_signal_dict = extract_audio_files(
         video_info_dict=video_info_dict,
         audio_extension="wav",
         audio_folder_path=audio_folder_path,
@@ -100,7 +100,7 @@ def synchronize_videos_from_audio(
         f"All videos are {check_list_values_are_equal(synchronized_video_framecounts)} frames long"
     )
 
-    synchronized_video_info_dict = get_video_info_dict(
+    synchronized_video_info_dict = create_video_info_dict(
         video_filepath_list=get_video_file_list(
             synchronized_video_folder_path, file_type=file_type
         )
