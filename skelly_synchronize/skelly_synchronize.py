@@ -31,6 +31,7 @@ from skelly_synchronize.tests.utilities.get_number_of_frames_of_videos_in_a_fold
     get_number_of_frames_of_videos_in_a_folder,
 )
 from skelly_synchronize.system.paths_and_file_names import (
+    DEBUG_TOML_NAME,
     SYNCHRONIZED_VIDEOS_FOLDER_NAME,
     AUDIO_FILES_FOLDER_NAME,
 )
@@ -114,7 +115,7 @@ def synchronize_videos_from_audio(
             ),
             "Lag dictionary": lag_dict,
         },
-        output_file_path=session_folder_path / "synchronization_debug.toml",
+        output_file_path=session_folder_path / DEBUG_TOML_NAME,
     )
 
     # end performance timer
