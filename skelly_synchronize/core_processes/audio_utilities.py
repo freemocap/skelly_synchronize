@@ -38,10 +38,13 @@ def extract_audio_files(
         )
 
         audio_name = video_dict["camera name"] + "." + audio_extension
+        audio_file_path = audio_folder_path / audio_name
 
-        audio_signal, sample_rate = librosa.load(
-            path=audio_folder_path / audio_name, sr=None
-        )
+        if not audio_file_path.is_file():
+            logging.error("Error loading audio file, verify video has audio track")
+            raise FileNotFoundError(f"Audio file not found: {audio_file_path}")
+
+        audio_signal, sample_rate = librosa.load(path=audio_file_path, sr=None)
 
         audio_duration = librosa.get_duration(y=audio_signal, sr=sample_rate)
         logging.info(f"audio file {audio_name} is {audio_duration} seconds long")
