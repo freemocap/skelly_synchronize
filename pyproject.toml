@@ -32,7 +32,7 @@ dependencies = [
 "numpy",
 "scipy",
 "setuptools",
-"opencv-python",
+"opencv-contrib-python==4.6.0.66",
 "deffcode",
 "toml",
 ] #add additional dependencies here - try to pin versions as minimally as possible
