@@ -1,7 +1,7 @@
 deffcode==0.2.5
 librosa==0.10.0
 numpy==1.21.5
-opencv_python==4.7.0.72
+opencv-contrib-python==4.6.0.66
 PyQt6==6.5.0
 pytest==7.1.2
 scipy==1.10.1
