@@ -56,6 +56,8 @@ def synchronize_videos_from_audio(
             parent_directory=raw_video_folder_path.parent,
             directory_name=SYNCHRONIZED_VIDEOS_FOLDER_NAME,
         )
+    synchronized_video_folder_path = Path(synchronized_video_folder_path)
+
     audio_folder_path = create_directory(
         parent_directory=synchronized_video_folder_path,
         directory_name=AUDIO_FILES_FOLDER_NAME,
