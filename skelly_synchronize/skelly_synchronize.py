@@ -21,7 +21,6 @@ from skelly_synchronize.core_processes.video_functions.video_utilities import (
     trim_videos,
 )
 from skelly_synchronize.utils.path_handling_utilities import (
-    get_parent_directory,
     create_directory,
 )
 from skelly_synchronize.tests.utilities.check_list_values_are_equal import (
@@ -39,6 +38,7 @@ from skelly_synchronize.system.paths_and_file_names import (
 
 def synchronize_videos_from_audio(
     raw_video_folder_path: Path,
+    synchronized_video_folder_path: Path = None,
     file_type: str = ".mp4",
     video_handler: str = "deffcode",
 ):
@@ -46,20 +46,21 @@ def synchronize_videos_from_audio(
     Uses deffcode and to handle the video files as default, set "video_handler" to "ffmpeg" to use ffmpeg methods instead.
     ffmpeg is used to get audio from the video files with either method.
     """
-    # start timer to measure performance
     start_timer = time.time()
 
-    session_folder_path = get_parent_directory(raw_video_folder_path)
     video_file_list = get_video_file_list(
         folder_path=raw_video_folder_path, file_type=file_type
     )
+    if synchronized_video_folder_path is None:
+        synchronized_video_folder_path = create_directory(
+            parent_directory=raw_video_folder_path.parent,
+            directory_name=SYNCHRONIZED_VIDEOS_FOLDER_NAME,
+        )
+    synchronized_video_folder_path = Path(synchronized_video_folder_path)
 
-    synchronized_video_folder_path = create_directory(
-        parent_directory=session_folder_path,
-        directory_name=SYNCHRONIZED_VIDEOS_FOLDER_NAME,
-    )
     audio_folder_path = create_directory(
-        parent_directory=session_folder_path, directory_name=AUDIO_FILES_FOLDER_NAME
+        parent_directory=synchronized_video_folder_path,
+        directory_name=AUDIO_FILES_FOLDER_NAME,
     )
 
     # create dictionaries with video and audio information
@@ -115,15 +116,12 @@ def synchronize_videos_from_audio(
             ),
             "Lag dictionary": lag_dict,
         },
-        output_file_path=session_folder_path / DEBUG_TOML_NAME,
+        output_file_path=synchronized_video_folder_path / DEBUG_TOML_NAME,
     )
 
-    # end performance timer
     end_timer = time.time()
 
-    # calculate and display elapsed processing time
-    elapsed_time = end_timer - start_timer
-    logging.info(f"Elapsed processing time in seconds: {elapsed_time}")
+    logging.info(f"Elapsed processing time in seconds: {end_timer - start_timer}")
 
     return synchronized_video_folder_path
 

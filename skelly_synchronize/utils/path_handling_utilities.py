@@ -5,24 +5,6 @@ from typing import Union
 logging.basicConfig(level=logging.INFO)
 
 
-def get_parent_directory(path: Union[str, Path]) -> Path:
-    """Get the parent directory of the specified path."""
-    path = Path(path)
-
-    logging.info(f"Input path: {path}")
-
-    if path == path.parent:
-        logging.warning(
-            f"Root directory detected, no parent directory. Returning {path}"
-        )
-        return path
-
-    parent_directory = path.parent
-    logging.info(f"Parent directory: {parent_directory}")
-
-    return parent_directory
-
-
 def create_directory(parent_directory: Path, directory_name: str) -> Path:
     """Create a new directory under the specified parent directory."""
     parent_directory = Path(parent_directory)
