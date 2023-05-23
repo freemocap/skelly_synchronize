@@ -1,11 +1,6 @@
 import time
 import logging
 from pathlib import Path
-from skelly_synchronize.core_processes.debug_output import (
-    remove_audio_files_from_audio_signal_dict,
-    save_dictionaries_to_toml,
-)
-
 
 logging.basicConfig(level=logging.INFO)
 
@@ -19,6 +14,10 @@ from skelly_synchronize.core_processes.video_functions.video_utilities import (
     get_fps_list,
     create_video_info_dict,
     trim_videos,
+)
+from skelly_synchronize.core_processes.debugging.debug_output import (
+    remove_audio_files_from_audio_signal_dict,
+    save_dictionaries_to_toml,
 )
 from skelly_synchronize.utils.path_handling_utilities import (
     create_directory,
