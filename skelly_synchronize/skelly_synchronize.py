@@ -108,12 +108,12 @@ def synchronize_videos_from_audio(
 
     save_dictionaries_to_toml(
         input_dictionaries={
-            "Raw video information": video_info_dict,
-            "Synchronized video information": synchronized_video_info_dict,
-            "Audio information": remove_audio_files_from_audio_signal_dict(
+            "Raw_video_information": video_info_dict,
+            "Synchronized_video_information": synchronized_video_info_dict,
+            "Audio_information": remove_audio_files_from_audio_signal_dict(
                 audio_signal_dictionary=audio_signal_dict
             ),
-            "Lag dictionary": lag_dict,
+            "Lag_dictionary": lag_dict,
         },
         output_file_path=synchronized_video_folder_path / DEBUG_TOML_NAME,
     )
