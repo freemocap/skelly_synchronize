@@ -1,5 +1,6 @@
 deffcode==0.2.5
 librosa==0.10.0
+matplotlib==3.7.1
 numpy==1.21.5
 opencv-contrib-python==4.6.0.66
 PyQt6==6.5.0

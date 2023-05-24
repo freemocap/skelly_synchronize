@@ -5,11 +5,7 @@ from pathlib import Path
 def save_dictionaries_to_toml(input_dictionaries: dict, output_file_path: Path):
     """Saves informative dictionaries to a TOML file for debugging"""
     with open(output_file_path, "w") as toml_file:
-        for idx, (name, dictionary) in enumerate(input_dictionaries.items()):
-            toml_file.write(f"[{name}]\n")
-            toml_file.write(toml.dumps(dictionary))
-            if idx < len(input_dictionaries) - 1:
-                toml_file.write("\n")
+        toml_file.write(toml.dumps(input_dictionaries))
 
 
 def remove_audio_files_from_audio_signal_dict(audio_signal_dictionary: dict) -> dict:
