@@ -4,6 +4,13 @@ AUDIO_FILES_FOLDER_NAME = "audio_files"
 
 # file names
 DEBUG_TOML_NAME = "synchronization_debug.toml"
+DEBUG_PLOT_NAME = "debug_plot.png"
+
+# debug dictionary keys
+RAW_VIDEO_NAME = "Raw_video_information"
+SYNCHRONIZED_VIDEO_NAME = "Synchronized_video_information"
+AUDIO_NAME = "Audio_information"
+LAG_DICTIONARY_NAME = "Lag_dictionary"
 
 # figshare info
 FIGSHARE_ZIP_FILE_URL = "https://figshare.com/ndownloader/files/40293973"

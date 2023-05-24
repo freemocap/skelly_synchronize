@@ -30,7 +30,11 @@ from skelly_synchronize.tests.utilities.get_number_of_frames_of_videos_in_a_fold
     get_number_of_frames_of_videos_in_a_folder,
 )
 from skelly_synchronize.system.paths_and_file_names import (
+    AUDIO_NAME,
     DEBUG_TOML_NAME,
+    LAG_DICTIONARY_NAME,
+    RAW_VIDEO_NAME,
+    SYNCHRONIZED_VIDEO_NAME,
     SYNCHRONIZED_VIDEOS_FOLDER_NAME,
     AUDIO_FILES_FOLDER_NAME,
 )
@@ -109,12 +113,12 @@ def synchronize_videos_from_audio(
 
     save_dictionaries_to_toml(
         input_dictionaries={
-            "Raw_video_information": video_info_dict,
-            "Synchronized_video_information": synchronized_video_info_dict,
-            "Audio_information": remove_audio_files_from_audio_signal_dict(
+            RAW_VIDEO_NAME: video_info_dict,
+            SYNCHRONIZED_VIDEO_NAME: synchronized_video_info_dict,
+            AUDIO_NAME: remove_audio_files_from_audio_signal_dict(
                 audio_signal_dictionary=audio_signal_dict
             ),
-            "Lag_dictionary": lag_dict,
+            LAG_DICTIONARY_NAME: lag_dict,
         },
         output_file_path=synchronized_video_folder_path / DEBUG_TOML_NAME,
     )

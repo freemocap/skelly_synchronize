@@ -5,23 +5,31 @@ import numpy as np
 from pathlib import Path
 from typing import List
 
+from skelly_synchronize.system.paths_and_file_names import (
+    DEBUG_PLOT_NAME,
+    DEBUG_TOML_NAME,
+    AUDIO_FILES_FOLDER_NAME,
+    LAG_DICTIONARY_NAME,
+    SYNCHRONIZED_VIDEO_NAME,
+)
+
 
 def create_debug_plots(synchronized_video_folder_path: Path):
-    output_filepath = synchronized_video_folder_path / "debug_plot.png"
-    audio_folder_path = synchronized_video_folder_path / "audio_files"
-    debug_toml_path = synchronized_video_folder_path / "synchronization_debug.toml"
+    output_filepath = synchronized_video_folder_path / DEBUG_PLOT_NAME
+    audio_folder_path = synchronized_video_folder_path / AUDIO_FILES_FOLDER_NAME
+    debug_toml_path = synchronized_video_folder_path / DEBUG_TOML_NAME
     debug_dictionary = toml.load(debug_toml_path)
 
     # get a single video's duration from debug dictionary
     arbitrary_video_information = next(
-        iter(debug_dictionary["Synchronized_video_information"].values())
+        iter(debug_dictionary[SYNCHRONIZED_VIDEO_NAME].values())
     )
     video_duration = float(arbitrary_video_information["video duration"])
 
     list_of_audio_paths = get_audio_paths_from_folder(audio_folder_path)
     plot_waveforms(
         audio_filepath_list=list_of_audio_paths,
-        lag_dictionary=debug_dictionary["Lag_dictionary"],
+        lag_dictionary=debug_dictionary[LAG_DICTIONARY_NAME],
         synched_video_length=video_duration,
         output_filepath=output_filepath,
     )
