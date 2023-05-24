@@ -1,6 +1,7 @@
 import time
 import logging
 from pathlib import Path
+from skelly_synchronize.core_processes.debugging.debug_plots import create_debug_plots
 
 logging.basicConfig(level=logging.INFO)
 
@@ -117,6 +118,8 @@ def synchronize_videos_from_audio(
         },
         output_file_path=synchronized_video_folder_path / DEBUG_TOML_NAME,
     )
+
+    create_debug_plots(synchronized_video_folder_path=synchronized_video_folder_path)
 
     end_timer = time.time()
 
