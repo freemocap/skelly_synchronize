@@ -12,6 +12,7 @@ from skelly_synchronize.core_processes.audio_utilities import (
 )
 from skelly_synchronize.core_processes.correlation_functions import find_lags
 from skelly_synchronize.core_processes.video_functions.video_utilities import (
+    attach_audio_to_videos,
     get_fps_list,
     create_video_info_dict,
     trim_videos,
@@ -121,6 +122,15 @@ def synchronize_videos_from_audio(
             LAG_DICTIONARY_NAME: lag_dict,
         },
         output_file_path=synchronized_video_folder_path / DEBUG_TOML_NAME,
+    )
+
+    attach_audio_to_videos(
+        synchronized_video_folder_path=synchronized_video_folder_path,
+        audio_folder_path=audio_folder_path,
+        lag_dictionary=lag_dict,
+        synchronized_video_length=next(iter(synchronized_video_info_dict.values()))[
+            "video duration"
+        ],
     )
 
     create_debug_plots(synchronized_video_folder_path=synchronized_video_folder_path)

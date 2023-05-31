@@ -39,7 +39,7 @@ def get_audio_paths_from_folder(
     folder_path: Path, file_extension: str = ".wav"
 ) -> List[Path]:
     search_extension = "*" + file_extension.lower()
-    return list(Path(folder_path).glob(search_extension))
+    return Path(folder_path).glob(search_extension)
 
 
 def plot_waveforms(

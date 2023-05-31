@@ -2,7 +2,7 @@ import logging
 from pathlib import Path
 
 
-def get_video_file_list(folder_path: Path, file_type: str) -> list:
+def get_video_file_list(folder_path: Path, file_type: str = "mp4") -> list:
     """Return a list of all video files in the base_path folder that match the given file type.
     file_type can be upper or lower case, with or without a leading period"""
 

@@ -1,6 +1,7 @@
 import logging
-from pathlib import Path
 import librosa
+import soundfile as sf
+from pathlib import Path
 import numpy as np
 from typing import Dict
 
@@ -56,3 +57,29 @@ def extract_audio_files(
         }
 
     return audio_signal_dict
+
+
+def trim_audio_files(
+    audio_folder_path: Path, lag_dictionary: dict, synced_video_length: float
+):
+    trimmed_audio_folder_path = Path(audio_folder_path) / "trimmed_audio"
+    trimmed_audio_folder_path.mkdir(parents=True, exist_ok=True)
+
+    for audio_filepath in audio_folder_path.glob("*.wav"):
+        audio_signal, sr = librosa.load(path=audio_filepath, sr=None)
+        lag = lag_dictionary[audio_filepath.stem]
+
+        lag_in_samples = int(float(lag) * sr)
+        synched_video_length_in_samples = int(synced_video_length * sr)
+
+        shortened_audio_signal = audio_signal[lag_in_samples:]
+        shortened_audio_signal = shortened_audio_signal[
+            :synched_video_length_in_samples
+        ]
+
+        audio_filename = str(audio_filepath.stem) + ".wav"
+
+        output_path = trimmed_audio_folder_path / audio_filename
+        sf.write(output_path, shortened_audio_signal, sr, subtype="PCM_24")
+
+    return trimmed_audio_folder_path
