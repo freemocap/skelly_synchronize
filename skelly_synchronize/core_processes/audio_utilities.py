@@ -8,6 +8,7 @@ from typing import Dict
 from skelly_synchronize.core_processes.video_functions.ffmpeg_functions import (
     extract_audio_from_video_ffmpeg,
 )
+from skelly_synchronize.system.paths_and_file_names import TRIMMED_AUDIO_FOLDER_NAME
 
 
 def get_audio_sample_rates(audio_signal_dict: Dict[str, float]) -> list:
@@ -62,7 +63,7 @@ def extract_audio_files(
 def trim_audio_files(
     audio_folder_path: Path, lag_dictionary: dict, synced_video_length: float
 ):
-    trimmed_audio_folder_path = Path(audio_folder_path) / "trimmed_audio"
+    trimmed_audio_folder_path = Path(audio_folder_path) / TRIMMED_AUDIO_FOLDER_NAME
     trimmed_audio_folder_path.mkdir(parents=True, exist_ok=True)
 
     for audio_filepath in audio_folder_path.glob("*.wav"):
