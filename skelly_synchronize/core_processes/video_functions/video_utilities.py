@@ -1,15 +1,20 @@
 import logging
+import tempfile
+import shutil
 from pathlib import Path
 from typing import Dict
+
+from skelly_synchronize.core_processes.audio_utilities import trim_audio_files
 from skelly_synchronize.core_processes.video_functions.deffcode_functions import (
     trim_single_video_deffcode,
 )
-
 from skelly_synchronize.core_processes.video_functions.ffmpeg_functions import (
+    attach_audio_to_video_ffmpeg,
     extract_video_duration_ffmpeg,
     extract_video_fps_ffmpeg,
     trim_single_video_ffmpeg,
 )
+from skelly_synchronize.utils.get_video_files import get_video_file_list
 from skelly_synchronize.utils.path_handling_utilities import (
     name_synced_video,
 )
@@ -120,3 +125,38 @@ def find_minimum_video_duration(
     )
 
     return min_duration
+
+
+def attach_audio_to_videos(
+    synchronized_video_folder_path: Path,
+    audio_folder_path: Path,
+    lag_dictionary: dict,
+    synchronized_video_length: float,
+):
+    trimmed_audio_folder_path = trim_audio_files(
+        audio_folder_path=audio_folder_path,
+        lag_dictionary=lag_dictionary,
+        synced_video_length=synchronized_video_length,
+    )
+
+    with tempfile.TemporaryDirectory(
+        dir=str(synchronized_video_folder_path)
+    ) as temp_dir:
+        for video in get_video_file_list(synchronized_video_folder_path):
+            video_name = video.stem
+            audio_filename = f"{str(video_name).split('_')[-1]}.wav"
+            output_video_pathstring = str(
+                Path(temp_dir) / f"{video_name}_with_audio_temp.mp4"
+            )
+
+            logging.info(f"Attaching audio to video {video_name}")
+            attach_audio_to_video_ffmpeg(
+                input_video_pathstring=str(video),
+                audio_file_pathstring=str(
+                    Path(trimmed_audio_folder_path) / audio_filename
+                ),
+                output_video_pathstring=output_video_pathstring,
+            )
+
+            # overwrite synced video with video containing audio
+            shutil.move(output_video_pathstring, video)

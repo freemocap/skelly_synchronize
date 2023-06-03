@@ -1,6 +1,7 @@
 # directory names
 SYNCHRONIZED_VIDEOS_FOLDER_NAME = "synchronized_videos"
 AUDIO_FILES_FOLDER_NAME = "audio_files"
+TRIMMED_AUDIO_FOLDER_NAME = "trimmed_audio"
 
 # file names
 DEBUG_TOML_NAME = "synchronization_debug.toml"

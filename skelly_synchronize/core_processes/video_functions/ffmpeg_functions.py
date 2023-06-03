@@ -96,3 +96,31 @@ def trim_single_video_ffmpeg(
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
     )
+
+
+def attach_audio_to_video_ffmpeg(
+    input_video_pathstring: str,
+    audio_file_pathstring: str,
+    output_video_pathstring: str,
+):
+    """Run a subprocess call to attach audio file back to the video"""
+
+    attach_audio_subprocess = subprocess.run(
+        [
+            "ffmpeg",
+            "-i",
+            f"{input_video_pathstring}",
+            "-i",
+            f"{audio_file_pathstring}",
+            "-c:v",
+            "copy",
+            "-c:a",
+            "aac",
+            f"{output_video_pathstring}",
+        ],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+
+    if attach_audio_subprocess.returncode != 0:
+        print(f"Error occurred: {attach_audio_subprocess.stderr.decode('utf-8')}")
