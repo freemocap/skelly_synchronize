@@ -63,6 +63,8 @@ def extract_audio_files(
 def trim_audio_files(
     audio_folder_path: Path, lag_dictionary: dict, synced_video_length: float
 ):
+    logging.info("Trimming audio files to match synchronized video length")
+
     trimmed_audio_folder_path = Path(audio_folder_path) / TRIMMED_AUDIO_FOLDER_NAME
     trimmed_audio_folder_path.mkdir(parents=True, exist_ok=True)
 
@@ -80,6 +82,7 @@ def trim_audio_files(
 
         audio_filename = str(audio_filepath.stem) + ".wav"
 
+        logging.info(f"Saving audio {audio_filename}")
         output_path = trimmed_audio_folder_path / audio_filename
         sf.write(output_path, shortened_audio_signal, sr, subtype="PCM_24")
 
