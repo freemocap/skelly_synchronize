@@ -1,8 +1,10 @@
 import logging
+import tempfile
+import shutil
 from pathlib import Path
 from typing import Dict
-from skelly_synchronize.core_processes.audio_utilities import trim_audio_files
 
+from skelly_synchronize.core_processes.audio_utilities import trim_audio_files
 from skelly_synchronize.core_processes.video_functions.deffcode_functions import (
     trim_single_video_deffcode,
 )
@@ -131,22 +133,30 @@ def attach_audio_to_videos(
     lag_dictionary: dict,
     synchronized_video_length: float,
 ):
-    video_with_audio_path = Path(synchronized_video_folder_path) / "videos_with_audio"
-    video_with_audio_path.mkdir(parents=True, exist_ok=True)
-
     trimmed_audio_folder_path = trim_audio_files(
         audio_folder_path=audio_folder_path,
         lag_dictionary=lag_dictionary,
         synced_video_length=synchronized_video_length,
     )
 
-    for video in get_video_file_list(synchronized_video_folder_path):
-        video_name = video.stem
-        audio_filename = f"{str(video_name).split('_')[-1]}.wav"
-        attach_audio_to_video_ffmpeg(
-            input_video_pathstring=str(video),
-            audio_file_pathstring=str(Path(trimmed_audio_folder_path) / audio_filename),
-            output_video_pathstring=str(
-                video_with_audio_path / f"{video_name}_with_audio.mp4"
-            ),
-        )
+    with tempfile.TemporaryDirectory(
+        dir=str(synchronized_video_folder_path)
+    ) as temp_dir:
+        for video in get_video_file_list(synchronized_video_folder_path):
+            video_name = video.stem
+            audio_filename = f"{str(video_name).split('_')[-1]}.wav"
+            output_video_pathstring = str(
+                Path(temp_dir) / f"{video_name}_with_audio_temp.mp4"
+            )
+
+            logging.info(f"Attaching audio to video {video_name}")
+            attach_audio_to_video_ffmpeg(
+                input_video_pathstring=str(video),
+                audio_file_pathstring=str(
+                    Path(trimmed_audio_folder_path) / audio_filename
+                ),
+                output_video_pathstring=output_video_pathstring,
+            )
+
+            # overwrite synced video with video containing audio
+            shutil.move(output_video_pathstring, video)
