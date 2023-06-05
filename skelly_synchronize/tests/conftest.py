@@ -22,18 +22,23 @@ def pytest_sessionstart():
     pytest.raw_video_folder_path = find_raw_videos_folder_path(
         pytest.sample_session_folder_path
     )
-    pytest.synchronized_video_folder_path = synchronize_videos_from_audio(pytest.raw_video_folder_path)
+    pytest.synchronized_video_folder_path = synchronize_videos_from_audio(
+        pytest.raw_video_folder_path
+    )
     pytest.video_file_list = get_video_file_list(
         folder_path=pytest.synchronized_video_folder_path, file_type=".mp4"
     )
+
 
 @pytest.fixture
 def raw_video_folder_path():
     return pytest.raw_video_folder_path
 
+
 @pytest.fixture
 def synchronized_video_folder_path():
     return pytest.synchronized_video_folder_path
+
 
 @pytest.fixture
 def test_video_pathstring():
