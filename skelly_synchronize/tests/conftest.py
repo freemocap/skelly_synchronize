@@ -19,7 +19,9 @@ from skelly_synchronize.utils.get_video_files import get_video_file_list
 
 def pytest_sessionstart():
     pytest.sample_session_folder_path = load_sample_data()
-    pytest.raw_video_folder_path = find_raw_videos_folder_path(pytest.sample_session_folder_path)
+    pytest.raw_video_folder_path = find_raw_videos_folder_path(
+        pytest.sample_session_folder_path
+    )
     video_folder_path = synchronize_videos_from_audio(pytest.raw_video_folder_path)
     pytest.video_file_list = get_video_file_list(
         folder_path=video_folder_path, file_type=".mp4"
