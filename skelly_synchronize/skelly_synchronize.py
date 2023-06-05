@@ -50,6 +50,8 @@ def synchronize_videos_from_audio(
     """Run the functions from the VideoSynchronize class to synchronize all videos with the given file type in the base path folder.
     Uses deffcode and to handle the video files as default, set "video_handler" to "ffmpeg" to use ffmpeg methods instead.
     ffmpeg is used to get audio from the video files with either method.
+
+    Returns the folder path of the synchronized video folder.
     """
     start_timer = time.time()
 
