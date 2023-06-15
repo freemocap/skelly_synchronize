@@ -1,25 +1,25 @@
 import json
-import logging
 import cv2
-from deffcode import FFdecoder
+from deffcode import FFdecoder, Sourcer
 
-from skelly_synchronize.utils.check_if_video_has_reversed_metadata import (
-    check_if_video_has_reversed_metadata,
-)
-
+tranposition_dictionary = {
+            90.0: 'transpose=cclock',
+            -270.0: 'transpose=cclock',
+            -90.0: 'transpose=clock',
+            270.0: 'transpose=clock',
+            180.0: 'transpose=cclock,transpose=cclock',
+}
 
 def trim_single_video_deffcode(
     input_video_pathstring: str,
     frame_list: list,
     output_video_pathstring: str,
 ):
-    vertical_video_bool = check_if_video_has_reversed_metadata(
-        video_pathstring=input_video_pathstring
-    )
+    sourcer = Sourcer(input_video_pathstring).probe_stream()
+    metadata_dictionary = sourcer.retrieve_metadata()
 
-    if vertical_video_bool:
-        logging.info(f"Video has reversed metadata, changing FFmpeg transpose argument")
-        ffparams = {"-ffprefixes": ["-noautorotate"], "-vf": "transpose=1"}
+    if metadata_dictionary["source_video_orientation"] != 0:
+        ffparams = {"-ffprefixes": ["-noautorotate"], "-vf": tranposition_dictionary[metadata_dictionary['source_video_orientation']]}
     else:
         ffparams = {}
 
