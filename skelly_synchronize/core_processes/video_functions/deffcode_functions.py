@@ -3,12 +3,13 @@ import cv2
 from deffcode import FFdecoder, Sourcer
 
 tranposition_dictionary = {
-            90.0: 'transpose=cclock',
-            -270.0: 'transpose=cclock',
-            -90.0: 'transpose=clock',
-            270.0: 'transpose=clock',
-            180.0: 'transpose=cclock,transpose=cclock',
+    90.0: "transpose=cclock",
+    -270.0: "transpose=cclock",
+    -90.0: "transpose=clock",
+    270.0: "transpose=clock",
+    180.0: "transpose=cclock,transpose=cclock",
 }
+
 
 def trim_single_video_deffcode(
     input_video_pathstring: str,
@@ -19,7 +20,12 @@ def trim_single_video_deffcode(
     metadata_dictionary = sourcer.retrieve_metadata()
 
     if metadata_dictionary["source_video_orientation"] != 0:
-        ffparams = {"-ffprefixes": ["-noautorotate"], "-vf": tranposition_dictionary[metadata_dictionary['source_video_orientation']]}
+        ffparams = {
+            "-ffprefixes": ["-noautorotate"],
+            "-vf": tranposition_dictionary[
+                metadata_dictionary["source_video_orientation"]
+            ],
+        }
     else:
         ffparams = {}
 
