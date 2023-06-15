@@ -103,7 +103,7 @@ def trim_videos(
 
 
 def get_fps_list(video_info_dict: Dict[str, dict]):
-    """Get list of the frames per second in earch video"""
+    """Get list of the frames per second in each video"""
     return [video_dict["video fps"] for video_dict in video_info_dict.values()]
 
 
