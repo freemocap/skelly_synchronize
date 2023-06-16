@@ -51,6 +51,7 @@ def trim_videos(
     lag_dict: Dict[str, float],
     fps: float,
     video_handler: str = "deffcode",
+    logging_callback: callable = None
 ) -> list:
     """Take a list of video files and a list of lags, and make all videos start and end at the same time."""
 
@@ -86,6 +87,8 @@ def trim_videos(
                 f"Video Saved - Cam name: {video_dict['camera name']}, Video Duration in Seconds: {minimum_duration}"
             )
         if video_handler == "deffcode":
+            if logging_callback:
+                logging_callback("Saving video - Cam name: " + video_dict["camera name"])
             logging.info(f"Saving video - Cam name: {video_dict['camera name']}")
             logging.info(
                 f"start frame is: {start_frame} desired saving duration is: {minimum_frames} frames"
