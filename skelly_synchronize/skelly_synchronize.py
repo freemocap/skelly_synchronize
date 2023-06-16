@@ -46,6 +46,7 @@ def synchronize_videos_from_audio(
     synchronized_video_folder_path: Path = None,
     file_type: str = ".mp4",
     video_handler: str = "deffcode",
+    logging_callback: callable = None,
 ):
     """Run the functions from the VideoSynchronize class to synchronize all videos with the given file type in the base path folder.
     Uses deffcode and to handle the video files as default, set "video_handler" to "ffmpeg" to use ffmpeg methods instead.
@@ -55,6 +56,8 @@ def synchronize_videos_from_audio(
     """
     start_timer = time.time()
 
+    if logging_callback:
+        logging_callback("Getting video and audio files...")
     video_file_list = get_video_file_list(
         folder_path=raw_video_folder_path, file_type=file_type
     )
@@ -70,6 +73,8 @@ def synchronize_videos_from_audio(
         directory_name=AUDIO_FILES_FOLDER_NAME,
     )
 
+    if logging_callback:
+        logging_callback("Getting video and audio information...")
     # create dictionaries with video and audio information
     video_info_dict = create_video_info_dict(
         video_filepath_list=video_file_list, video_handler="ffmpeg"
@@ -84,23 +89,32 @@ def synchronize_videos_from_audio(
     fps_list = get_fps_list(video_info_dict=video_info_dict)
     audio_sample_rates = get_audio_sample_rates(audio_signal_dict=audio_signal_dict)
 
+    if logging_callback:
+        logging_callback("Checking framerates are equal...")
     # frame rates and audio sample rates must be the same duration for the trimming process to work correctly
     fps = check_list_values_are_equal(input_list=fps_list)
     audio_sample_rate = check_list_values_are_equal(input_list=audio_sample_rates)
 
+    if logging_callback:
+        logging_callback("Finding lags...")
     # find the lags between starting times
     lag_dict = find_lags(
         audio_signal_dict=audio_signal_dict, sample_rate=audio_sample_rate
     )
 
+    if logging_callback:
+        logging_callback("Trimming videos...")
     trim_videos(
         video_info_dict=video_info_dict,
         synchronized_folder_path=synchronized_video_folder_path,
         lag_dict=lag_dict,
         fps=fps,
         video_handler=video_handler,
+        logging_callback=logging_callback
     )
 
+    if logging_callback:
+        logging_callback("Verifying synchronized frame counts are equal...")
     synchronized_video_framecounts = get_number_of_frames_of_videos_in_a_folder(
         folder_path=synchronized_video_folder_path
     )
@@ -125,7 +139,9 @@ def synchronize_videos_from_audio(
         },
         output_file_path=synchronized_video_folder_path / DEBUG_TOML_NAME,
     )
-
+    
+    if logging_callback:
+        logging_callback("Reattaching audio to videos...")
     attach_audio_to_videos(
         synchronized_video_folder_path=synchronized_video_folder_path,
         audio_folder_path=audio_folder_path,
@@ -135,6 +151,8 @@ def synchronize_videos_from_audio(
         ],
     )
 
+    if logging_callback:
+        logging_callback("Creating debug plots...")
     create_debug_plots(synchronized_video_folder_path=synchronized_video_folder_path)
 
     end_timer = time.time()
