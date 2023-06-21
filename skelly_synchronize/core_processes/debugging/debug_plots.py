@@ -5,7 +5,7 @@ import numpy as np
 from pathlib import Path
 from typing import List
 
-mpl.use('Agg')
+mpl.use("Agg")
 import matplotlib.pyplot as plt
 
 from skelly_synchronize.system.paths_and_file_names import (
@@ -42,7 +42,8 @@ def plot_waveforms(
     trimmed_audio_filepath_list: List[Path],
     output_filepath: Path,
 ):
-    with plt.subplots(2, 1, sharex=True, sharey=True) as (fig, axs):
+    with plt.figure() as fig:
+        axs = fig.subplots(2, 1, sharex=True, sharey=True)
         fig.suptitle("Audio Cross Correlation Debug")
 
         axs[0].set_ylabel("Amplitude")
