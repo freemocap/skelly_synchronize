@@ -1,7 +1,9 @@
 import librosa
 import toml
-import matplotlib.pyplot as plt
 import numpy as np
+import plotly.graph_objects as go
+import plotly.subplots as sp
+import plotly.colors as colors
 from pathlib import Path
 from typing import List
 
@@ -39,28 +41,55 @@ def plot_waveforms(
     trimmed_audio_filepath_list: List[Path],
     output_filepath: Path,
 ):
-    fig, axs = plt.subplots(2, 1, sharex=True, sharey=True)
-    fig.suptitle("Audio Cross Correlation Debug")
+    # Create a subplot with 2 rows and 1 column
+    fig = sp.make_subplots(
+        rows=2,
+        cols=1,
+        shared_xaxes=True,
+        shared_yaxes=True,
+        subplot_titles=("Before Cross Correlation", "After Cross Correlation"),
+    )
 
-    axs[0].set_ylabel("Amplitude")
-    axs[1].set_ylabel("Amplitude")
-    axs[1].set_xlabel("Time (s)")
+    color_list = colors.DEFAULT_PLOTLY_COLORS
 
-    axs[0].set_title("Before Cross Correlation")
-    axs[1].set_title("After Cross Correlation")
-
-    for audio_filepath in raw_audio_filepath_list:
+    for idx, audio_filepath in enumerate(raw_audio_filepath_list):
         audio_signal, sr = librosa.load(path=audio_filepath, sr=None)
-
         time = np.linspace(0, len(audio_signal) / sr, num=len(audio_signal))
+        fig.add_trace(
+            go.Scatter(
+                name=audio_filepath.stem,
+                x=time,
+                y=audio_signal,
+                mode="lines",
+                opacity=0.4,
+                line=dict(color=color_list[idx % len(color_list)]),
+            ),
+            row=1,
+            col=1,
+        )
 
-        axs[0].plot(time, audio_signal, alpha=0.4)
-
-    for audio_filepath in trimmed_audio_filepath_list:
+    for idx, audio_filepath in enumerate(trimmed_audio_filepath_list):
         audio_signal, sr = librosa.load(path=audio_filepath, sr=None)
-
         time = np.linspace(0, len(audio_signal) / sr, num=len(audio_signal))
+        fig.add_trace(
+            go.Scatter(
+                name=audio_filepath.stem,
+                x=time,
+                y=audio_signal,
+                mode="lines",
+                opacity=0.4,
+                line=dict(color=color_list[idx % len(color_list)]),
+                showlegend=False,
+            ),
+            row=2,
+            col=1,
+        )
 
-        axs[1].plot(time, audio_signal, alpha=0.4)
+    fig.update_layout(
+        title="Audio Cross Correlation Debug",
+        yaxis1=dict(title="Amplitude"),
+        yaxis2=dict(title="Amplitude"),
+        xaxis2=dict(title="Time (s)"),
+    )
 
-    plt.savefig(output_filepath)
+    fig.write_image(str(output_filepath))
