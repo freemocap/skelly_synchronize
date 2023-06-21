@@ -136,7 +136,9 @@ def synchronize_videos_from_audio(
         ],
     )
     if create_debug_plots_bool:
-        create_debug_plots(synchronized_video_folder_path=synchronized_video_folder_path)
+        create_debug_plots(
+            synchronized_video_folder_path=synchronized_video_folder_path
+        )
 
     end_timer = time.time()
 
