@@ -5,13 +5,8 @@ import numpy as np
 from pathlib import Path
 from typing import List
 
-# mpl.use("Agg")
-# import matplotlib.pyplot as plt
-
-from matplotlib.backends.backend_agg import FigureCanvasAgg
-from matplotlib.figure import Figure
-import numpy as np
-from PIL import Image
+mpl.use("Agg")
+import matplotlib.pyplot as plt
 
 from skelly_synchronize.system.paths_and_file_names import (
     DEBUG_PLOT_NAME,
@@ -42,69 +37,33 @@ def get_audio_paths_from_folder(
     return Path(folder_path).glob(search_extension)
 
 
-# def plot_waveforms(
-#     raw_audio_filepath_list: List[Path],
-#     trimmed_audio_filepath_list: List[Path],
-#     output_filepath: Path,
-# ):
-#     fig, axs = plt.subplots(2, 1, sharex=True, sharey=True)
-#     fig.suptitle("Audio Cross Correlation Debug")
-
-#     axs[0].set_ylabel("Amplitude")
-#     axs[1].set_ylabel("Amplitude")
-#     axs[1].set_xlabel("Time (s)")
-
-#     axs[0].set_title("Before Cross Correlation")
-#     axs[1].set_title("After Cross Correlation")
-
-#     for audio_filepath in raw_audio_filepath_list:
-#         audio_signal, sr = librosa.load(path=audio_filepath, sr=None)
-
-#         time = np.linspace(0, len(audio_signal) / sr, num=len(audio_signal))
-
-#         axs[0].plot(time, audio_signal, alpha=0.4)
-
-#     for audio_filepath in trimmed_audio_filepath_list:
-#         audio_signal, sr = librosa.load(path=audio_filepath, sr=None)
-
-#         time = np.linspace(0, len(audio_signal) / sr, num=len(audio_signal))
-
-#         axs[1].plot(time, audio_signal, alpha=0.4)
-
-#     plt.savefig(output_filepath)
-
-
 def plot_waveforms(
     raw_audio_filepath_list: List[Path],
     trimmed_audio_filepath_list: List[Path],
     output_filepath: Path,
 ):
-    fig = Figure(figsize=(10, 10), dpi=100)
-    canvas = FigureCanvasAgg(fig)
-
-    ax0 = fig.add_subplot(111)
-    ax1 = ax0.twinx()
+    fig, axs = plt.subplots(2, 1, sharex=True, sharey=True)
     fig.suptitle("Audio Cross Correlation Debug")
 
-    ax0.set_ylabel("Amplitude")
-    ax1.set_ylabel("Amplitude")
-    ax1.set_xlabel("Time (s)")
+    axs[0].set_ylabel("Amplitude")
+    axs[1].set_ylabel("Amplitude")
+    axs[1].set_xlabel("Time (s)")
 
-    ax0.set_title("Before Cross Correlation")
-    ax1.set_title("After Cross Correlation")
+    axs[0].set_title("Before Cross Correlation")
+    axs[1].set_title("After Cross Correlation")
 
     for audio_filepath in raw_audio_filepath_list:
         audio_signal, sr = librosa.load(path=audio_filepath, sr=None)
 
         time = np.linspace(0, len(audio_signal) / sr, num=len(audio_signal))
 
-        ax0.plot(time, audio_signal, alpha=0.4)
+        axs[0].plot(time, audio_signal, alpha=0.4)
 
     for audio_filepath in trimmed_audio_filepath_list:
         audio_signal, sr = librosa.load(path=audio_filepath, sr=None)
 
         time = np.linspace(0, len(audio_signal) / sr, num=len(audio_signal))
 
-        ax1.plot(time, audio_signal, alpha=0.4)
+        axs[1].plot(time, audio_signal, alpha=0.4)
 
-    fig.savefig(output_filepath)
+    plt.savefig(output_filepath)
