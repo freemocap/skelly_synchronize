@@ -1,9 +1,12 @@
 import librosa
 import toml
-import matplotlib.pyplot as plt
+import matplotlib as mpl
 import numpy as np
 from pathlib import Path
 from typing import List
+
+mpl.use('Agg')
+import matplotlib.pyplot as plt
 
 from skelly_synchronize.system.paths_and_file_names import (
     DEBUG_PLOT_NAME,
