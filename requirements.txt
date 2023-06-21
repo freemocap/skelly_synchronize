@@ -1,8 +1,9 @@
 deffcode==0.2.5
+kaleido==0.2.1
 librosa==0.10.0
-matplotlib==3.7.1
 numpy==1.21.5
 opencv-contrib-python==4.6.0.66
+plotly==5.15.0
 PyQt6==6.5.0
 pytest==7.1.2
 scipy==1.10.1
