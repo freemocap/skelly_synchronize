@@ -46,7 +46,7 @@ def synchronize_videos_from_audio(
     synchronized_video_folder_path: Path = None,
     file_type: str = ".mp4",
     video_handler: str = "deffcode",
-    create_debug_plots: bool = True,
+    create_debug_plots_bool: bool = True,
 ):
     """Run the functions from the VideoSynchronize class to synchronize all videos with the given file type in the base path folder.
     Uses deffcode and to handle the video files as default, set "video_handler" to "ffmpeg" to use ffmpeg methods instead.
@@ -135,7 +135,7 @@ def synchronize_videos_from_audio(
             "video duration"
         ],
     )
-    if create_debug_plots:
+    if create_debug_plots_bool:
         create_debug_plots(synchronized_video_folder_path=synchronized_video_folder_path)
 
     end_timer = time.time()
