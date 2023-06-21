@@ -32,11 +32,6 @@ def check_if_video_has_reversed_metadata(video_pathstring: str):
     deffcode_width = metadata_dictionary["source_video_resolution"][0]
     deffcode_height = metadata_dictionary["source_video_resolution"][1]
 
-    logging.info(f"opencv width is {opencv_width}, opencv height is {opencv_height}")
-    logging.info(
-        f"deffcode width is {deffcode_width}, deffcode height is {deffcode_height}"
-    )
-
     if (opencv_width != deffcode_width) & (opencv_height != deffcode_height):
         return True
     else:
