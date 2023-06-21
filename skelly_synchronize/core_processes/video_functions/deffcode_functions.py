@@ -26,7 +26,7 @@ def trim_single_video_deffcode(
     decoder = FFdecoder(
         str(input_video_pathstring),
         frame_format="bgr24",
-        verbose=True,
+        verbose=False,
         **ffparams,
     ).formulate()
 
