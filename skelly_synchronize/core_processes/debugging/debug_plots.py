@@ -42,29 +42,28 @@ def plot_waveforms(
     trimmed_audio_filepath_list: List[Path],
     output_filepath: Path,
 ):
-    with plt.figure() as fig:
-        axs = fig.subplots(2, 1, sharex=True, sharey=True)
-        fig.suptitle("Audio Cross Correlation Debug")
+    fig, axs = plt.subplots(2, 1, sharex=True, sharey=True)
+    fig.suptitle("Audio Cross Correlation Debug")
 
-        axs[0].set_ylabel("Amplitude")
-        axs[1].set_ylabel("Amplitude")
-        axs[1].set_xlabel("Time (s)")
+    axs[0].set_ylabel("Amplitude")
+    axs[1].set_ylabel("Amplitude")
+    axs[1].set_xlabel("Time (s)")
 
-        axs[0].set_title("Before Cross Correlation")
-        axs[1].set_title("After Cross Correlation")
+    axs[0].set_title("Before Cross Correlation")
+    axs[1].set_title("After Cross Correlation")
 
-        for audio_filepath in raw_audio_filepath_list:
-            audio_signal, sr = librosa.load(path=audio_filepath, sr=None)
+    for audio_filepath in raw_audio_filepath_list:
+        audio_signal, sr = librosa.load(path=audio_filepath, sr=None)
 
-            time = np.linspace(0, len(audio_signal) / sr, num=len(audio_signal))
+        time = np.linspace(0, len(audio_signal) / sr, num=len(audio_signal))
 
-            axs[0].plot(time, audio_signal, alpha=0.4)
+        axs[0].plot(time, audio_signal, alpha=0.4)
 
-        for audio_filepath in trimmed_audio_filepath_list:
-            audio_signal, sr = librosa.load(path=audio_filepath, sr=None)
+    for audio_filepath in trimmed_audio_filepath_list:
+        audio_signal, sr = librosa.load(path=audio_filepath, sr=None)
 
-            time = np.linspace(0, len(audio_signal) / sr, num=len(audio_signal))
+        time = np.linspace(0, len(audio_signal) / sr, num=len(audio_signal))
 
-            axs[1].plot(time, audio_signal, alpha=0.4)
+        axs[1].plot(time, audio_signal, alpha=0.4)
 
-        plt.savefig(output_filepath)
+    plt.savefig(output_filepath)
