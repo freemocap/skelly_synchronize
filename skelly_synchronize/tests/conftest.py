@@ -2,7 +2,7 @@ import sys
 import pytest
 from pathlib import Path
 
-print(f"Thank you for using skelly_synchronize!")
+print("Thank you for using skelly_synchronize!")
 print(f"This is printing from: {__file__}")
 
 base_package_path = Path(__file__).parent.parent.parent
