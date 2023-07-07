@@ -18,7 +18,7 @@ def trim_single_video_deffcode(
     )
 
     if vertical_video_bool:
-        logging.info(f"Video has reversed metadata, changing FFmpeg transpose argument")
+        logging.info("Video has reversed metadata, changing FFmpeg transpose argument")
         ffparams = {"-ffprefixes": ["-noautorotate"], "-vf": "transpose=1"}
     else:
         ffparams = {}

@@ -3,8 +3,6 @@ import logging
 from pathlib import Path
 from skelly_synchronize.core_processes.debugging.debug_plots import create_debug_plots
 
-logging.basicConfig(level=logging.INFO)
-
 from skelly_synchronize.utils.get_video_files import get_video_file_list
 from skelly_synchronize.core_processes.audio_utilities import (
     extract_audio_files,
@@ -39,6 +37,8 @@ from skelly_synchronize.system.paths_and_file_names import (
     SYNCHRONIZED_VIDEOS_FOLDER_NAME,
     AUDIO_FILES_FOLDER_NAME,
 )
+
+logging.basicConfig(level=logging.INFO)
 
 
 def synchronize_videos_from_audio(

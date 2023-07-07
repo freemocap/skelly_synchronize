@@ -3,8 +3,6 @@ import sys
 from pathlib import Path
 from typing import Union
 
-logger = logging.getLogger(__name__)
-
 base_package_path = Path(__file__).parent.parent.parent.parent
 print(f"adding base_package_path: {base_package_path} : to sys.path")
 sys.path.insert(0, str(base_package_path))  # add parent directory to sys.path
@@ -13,6 +11,8 @@ from skelly_synchronize.utils.get_video_files import get_video_file_list
 from skelly_synchronize.tests.utilities.find_frame_count_of_video import (
     find_frame_count_of_video,
 )
+
+logger = logging.getLogger(__name__)
 
 
 def get_number_of_frames_of_videos_in_a_folder(folder_path: Union[str, Path]):

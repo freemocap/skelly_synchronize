@@ -44,7 +44,16 @@ requires-python = ">=3.8"
 dynamic = ["version"]
 
 [project.optional-dependencies]
-dev = ["black", "bumpver", "isort", "pip-tools", "pytest"]
+dev = [
+"black",
+"bumpver", 
+"isort", 
+"pip-tools", 
+"pytest", 
+"flake8",
+"flake8-bandit",
+"flake8-bugbear",
+]
 
 [tool.bumpver] #bump the version by entering `bumpver update` in the terminal
 current_version = "v2023.06.1021"

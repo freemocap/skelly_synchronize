@@ -81,7 +81,7 @@ def trim_single_video_ffmpeg(
 ):
     """Run a subprocess call to trim a video from start time to last as long as the desired duration"""
 
-    trim_video_subprocess = subprocess.run(
+    subprocess.run(
         [
             "ffmpeg",
             "-i",
