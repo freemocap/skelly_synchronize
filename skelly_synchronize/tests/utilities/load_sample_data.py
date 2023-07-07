@@ -17,7 +17,7 @@ def load_sample_data() -> Path:
     figshare_sample_data_path = extract_to_path / FIGSHARE_SAMPLE_DATA_FILE_NAME
 
     if not Path.exists(figshare_sample_data_path):
-        r = requests.get(FIGSHARE_ZIP_FILE_URL)
+        r = requests.get(FIGSHARE_ZIP_FILE_URL, timeout=(10, 60))
         z = zipfile.ZipFile(io.BytesIO(r.content))
         z.extractall(figshare_sample_data_path)
 
