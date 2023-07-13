@@ -1,9 +1,7 @@
 import logging
 import librosa
+from matplotlib import pyplot as plt
 import numpy as np
-import plotly.graph_objects as go
-import plotly.subplots as sp
-import plotly.colors as colors
 from pathlib import Path
 from typing import List
 
@@ -22,6 +20,7 @@ def create_debug_plots(synchronized_video_folder_path: Path):
     list_of_raw_audio_paths = get_audio_paths_from_folder(raw_audio_folder_path)
     list_of_trimmed_audio_paths = get_audio_paths_from_folder(trimmed_audio_folder_path)
 
+    logging.info("Creating debug plots")
     plot_waveforms(
         raw_audio_filepath_list=list_of_raw_audio_paths,
         trimmed_audio_filepath_list=list_of_trimmed_audio_paths,
@@ -37,60 +36,40 @@ def get_audio_paths_from_folder(
 
 
 def plot_waveforms(
-    raw_audio_filepath_list: List[Path],
-    trimmed_audio_filepath_list: List[Path],
+    audio_filepath_list: List[Path],
+    lag_dictionary: dict,
+    synched_video_length: float,
     output_filepath: Path,
 ):
-    # Create a subplot with 2 rows and 1 column
-    fig = sp.make_subplots(
-        rows=2,
-        cols=1,
-        shared_xaxes=True,
-        shared_yaxes=True,
-        subplot_titles=("Before Cross Correlation", "After Cross Correlation"),
-    )
+    fig, axs = plt.subplots(2, 1, sharex=True, sharey=True)
+    fig.suptitle("Audio Cross Correlation Debug")
 
-    color_list = colors.DEFAULT_PLOTLY_COLORS
+    axs[0].set_ylabel("Amplitude")
+    axs[1].set_ylabel("Amplitude")
+    axs[1].set_xlabel("Time (s)")
 
-    for idx, audio_filepath in enumerate(raw_audio_filepath_list):
+    axs[0].set_title("Before Cross Correlation")
+    axs[1].set_title("After Cross Correlation")
+
+    for audio_filepath in audio_filepath_list:
         audio_signal, sr = librosa.load(path=audio_filepath, sr=None)
+        lag = lag_dictionary[audio_filepath.stem]
+
+        lag_in_samples = int(float(lag) * sr)
+        synched_video_length_in_samples = int(synched_video_length * sr)
+
+        shortened_audio_signal = audio_signal[lag_in_samples:]
+        shortened_audio_signal = shortened_audio_signal[
+            :synched_video_length_in_samples
+        ]
+
         time = np.linspace(0, len(audio_signal) / sr, num=len(audio_signal))
-        fig.add_trace(
-            go.Scatter(
-                name=audio_filepath.stem,
-                x=time,
-                y=audio_signal,
-                mode="lines",
-                opacity=0.4,
-                line=dict(color=color_list[idx % len(color_list)]),
-            ),
-            row=1,
-            col=1,
+        shortened_time = np.linspace(
+            0, len(shortened_audio_signal) / sr, num=len(shortened_audio_signal)
         )
 
-    for idx, audio_filepath in enumerate(trimmed_audio_filepath_list):
-        audio_signal, sr = librosa.load(path=audio_filepath, sr=None)
-        time = np.linspace(0, len(audio_signal) / sr, num=len(audio_signal))
-        fig.add_trace(
-            go.Scatter(
-                name=audio_filepath.stem,
-                x=time,
-                y=audio_signal,
-                mode="lines",
-                opacity=0.4,
-                line=dict(color=color_list[idx % len(color_list)]),
-                showlegend=False,
-            ),
-            row=2,
-            col=1,
-        )
+        axs[0].plot(time, audio_signal, alpha=0.4)
+        axs[1].plot(shortened_time, shortened_audio_signal, alpha=0.4)
 
-    fig.update_layout(
-        title="Audio Cross Correlation Debug",
-        yaxis1=dict(title="Amplitude"),
-        yaxis2=dict(title="Amplitude"),
-        xaxis2=dict(title="Time (s)"),
-    )
-    
-    logging.info("Saving plot to: " + str(output_filepath))
-    fig.write_image(str(output_filepath), engine="kaleido")
+    logging.info(f"Saving debug plots to: {output_filepath}")
+    plt.savefig(output_filepath)
