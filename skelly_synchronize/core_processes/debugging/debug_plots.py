@@ -1,3 +1,4 @@
+import logging
 import librosa
 import numpy as np
 import plotly.graph_objects as go
@@ -90,5 +91,6 @@ def plot_waveforms(
         yaxis2=dict(title="Amplitude"),
         xaxis2=dict(title="Time (s)"),
     )
-
-    fig.write_image(str(output_filepath))
+    
+    logging.info("Saving plot to: " + str(output_filepath))
+    fig.write_image(str(output_filepath), engine="kaleido")
