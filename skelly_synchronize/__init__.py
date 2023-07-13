@@ -1,7 +1,7 @@
 """Top-level package for basic_template_repo."""
 
 __package_name__ = "skelly_synchronize"
-__version__ = "v2023.06.1021"
+__version__ = "v2023.07.1022"
 
 __author__ = """Philip Queen"""
 __email__ = "info@freemocap.org"
