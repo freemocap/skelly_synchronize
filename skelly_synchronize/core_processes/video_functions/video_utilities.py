@@ -144,7 +144,7 @@ def attach_audio_to_videos(
     ) as temp_dir:
         for video in get_video_file_list(synchronized_video_folder_path):
             video_name = video.stem
-            audio_filename = f"{str(video_name).split('_')[-1]}.wav"
+            audio_filename = f"{str(video_name).split('_', maxsplit=1)[-1]}.wav"
             output_video_pathstring = str(
                 Path(temp_dir) / f"{video_name}_with_audio_temp.mp4"
             )
