@@ -32,7 +32,7 @@ dependencies = [
 "numpy",
 "scipy",
 "setuptools",
-"opencv-contrib-python==4.6.0.66",
+"opencv-contrib-python",
 "deffcode",
 "toml",
 "matplotlib",
