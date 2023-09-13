@@ -1,4 +1,5 @@
 import logging
+import cv2
 import numpy as np
 from typing import Dict
 from scipy import signal
@@ -20,6 +21,44 @@ def cross_correlate(audio1, audio2):
     return lag
 
 
+def find_first_brightness_change(
+    video_pathstring: str, brightness_ratio_threshold: float = 4
+) -> int:
+    logging.info(f"Detecting first brightness change in {video_pathstring}")
+    video_capture_object = cv2.VideoCapture(video_pathstring)
+
+    ret, frame = video_capture_object.read()
+    gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    previous_frame_brightness = np.mean(gray_frame)
+
+    brightness_ratio = 1
+    highest_brightness_ratio = 1
+    frame_number = 0
+    brightest_frame_yet = 0
+
+    while ret and brightness_ratio < brightness_ratio_threshold:
+        gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        current_frame_brightness = np.mean(gray_frame)
+
+        brightness_ratio = current_frame_brightness / previous_frame_brightness
+
+        if brightness_ratio > highest_brightness_ratio:
+            highest_brightness_ratio = brightness_ratio
+            brightest_frame_yet = frame_number
+
+        ret, frame = video_capture_object.read()
+        frame_number += 1
+
+    if brightness_ratio > brightness_ratio_threshold:
+        logging.info(f"First brightness change detected at frame number {frame_number}")
+    else:
+        logging.info(
+            f"First brightness change not detected, defaulting to frame with largest detected brightness ratio"
+        )
+
+    return brightest_frame_yet
+
+
 def normalize_lag_dictionary(lag_dictionary: Dict[str, float]) -> Dict[str, float]:
     """Subtract every value in the dict from the max value.
     This creates a normalized lag dict where the latest video has lag of 0.
@@ -33,9 +72,11 @@ def normalize_lag_dictionary(lag_dictionary: Dict[str, float]) -> Dict[str, floa
     return normalized_lag_dictionary
 
 
-def find_lags(audio_signal_dict: dict, sample_rate: int) -> Dict[str, float]:
-    """Take a file list containing video and audio files, as well as the sample rate of the audio, cross correlate the audio files, and output a lag list.
-    The lag list is normalized so that the lag of the latest video to start in time is 0, and all other lags are positive.
+def find_cross_correlation_lags(
+    audio_signal_dict: dict, sample_rate: int
+) -> Dict[str, float]:
+    """Take a dictionary of audio signals, as well as the sample rate of the audio, cross correlate the audio files, and output a lag dictionary.
+    The lag dict is normalized so that the lag of the latest video to start in time is 0, and all other lags are positive.
     """
     comparison_file_key = next(iter(audio_signal_dict))
     logging.info(
@@ -58,3 +99,35 @@ def find_lags(audio_signal_dict: dict, sample_rate: int) -> Dict[str, float]:
     )
 
     return normalized_lag_dict
+
+
+def find_brightest_point_lags(
+    video_info_dict: dict, frame_rate: float
+) -> Dict[str, float]:
+    """Take a video info dictionary, find the first significant contrast change in the video, and return it's time in second as the lag.
+    The lag dict is normalized so that the lag of the latest video to start in time is 0, and all other lags are positive.
+    """
+    lag_dict = {
+        video_dict["camera_name"]: find_first_brightness_change(
+            video_filepath=str(video_dict["video pathstring"]),
+            brightness_ratio_threshold=5,
+        )
+        / frame_rate
+        for video_dict in video_info_dict.values()
+    }
+
+    normalized_lag_dict = normalize_lag_dictionary(lag_dictionary=lag_dict)
+
+    logging.info(
+        f"original lag dict: {lag_dict} normalized lag dict: {normalized_lag_dict}"
+    )
+
+    return normalized_lag_dict
+
+
+if __name__ == "__main__":
+    video_pathstring = "/Users/philipqueen/Downloads/first_brightness_change_check.mov"
+    brightness_change = find_first_brightness_change(
+        video_pathstring=video_pathstring, brightness_ratio_threshold=4
+    )
+    print(brightness_change)
