@@ -1,4 +1,5 @@
 from pathlib import Path
+from PyQt6.QtGui import QDoubleValidator
 from PyQt6.QtWidgets import (
     QApplication,
     QWidget,
@@ -7,6 +8,8 @@ from PyQt6.QtWidgets import (
     QFileDialog,
     QMainWindow,
     QLabel,
+    QLineEdit,
+    QHBoxLayout
 )
 
 from gui.widgets.run_button_widget import RunButtonWidget
@@ -51,10 +54,22 @@ class MainWindow(QMainWindow):
         )
         self.run_brightness_synch_button.setEnabled(False)
         self._layout.addWidget(self.run_brightness_synch_button)
+
+        hbox = QHBoxLayout()
+        brightness_threshold_default = 4
+        hbox.addWidget(QLabel("Brightness ratio threshold: "))
+        self.brightness_threshold_lineedit = QLineEdit()
+        self.brightness_threshold_lineedit.setText(str(brightness_threshold_default))
+        validator = QDoubleValidator()
+        validator.setBottom(1)
+        self.brightness_threshold_lineedit.setValidator(validator)
+        hbox.addWidget(self.brightness_threshold_lineedit)
+        self._layout.addLayout(hbox)
+
         self.run_brightness_synch_button.clicked.connect(
             lambda: synchronize_videos_from_brightness(
                 raw_video_folder_path=self._folder_path,
-                brightness_ratio_threshold=1.2,
+                brightness_ratio_threshold=float(self.brightness_threshold_lineedit.text()),
             )
         )
 

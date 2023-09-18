@@ -164,6 +164,8 @@ def synchronize_videos_from_brightness(
     """
     start_timer = time.time()
 
+    logging.info(f"Synchronizing videos with a brightness ratio threshold of {brightness_ratio_threshold}")
+
     video_file_list = get_video_file_list(
         folder_path=raw_video_folder_path, file_type=file_type
     )
