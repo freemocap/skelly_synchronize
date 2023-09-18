@@ -155,6 +155,7 @@ def synchronize_videos_from_brightness(
     synchronized_video_folder_path: Path = None,
     file_type: str = ".mp4",
     video_handler: str = "deffcode",
+    brightness_ratio_threshold: float = 3,
 ):
     """Synchronize all videos with the given file type in the base path folder using the first frame in each video with a high change in brightness between frames.
     Uses deffcode and to handle the video files as default, set "video_handler" to "ffmpeg" to use ffmpeg methods instead.
@@ -185,7 +186,9 @@ def synchronize_videos_from_brightness(
     fps = check_list_values_are_equal(input_list=fps_list)
 
     # find the lags between starting times
-    lag_dict = find_brightest_point_lags
+    lag_dict = find_brightest_point_lags(
+        video_info_dict=video_info_dict, frame_rate=fps, brightness_ratio_threshold=brightness_ratio_threshold
+    )
 
     trim_videos(
         video_info_dict=video_info_dict,

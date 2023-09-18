@@ -53,7 +53,7 @@ def find_first_brightness_change(
         logging.info(f"First brightness change detected at frame number {frame_number}")
     else:
         logging.info(
-            f"First brightness change not detected, defaulting to frame with largest detected brightness ratio"
+            f"First brightness change not detected, defaulting to frame with largest detected brightness ratio of {highest_brightness_ratio}"
         )
 
     return brightest_frame_yet
@@ -102,27 +102,21 @@ def find_cross_correlation_lags(
 
 
 def find_brightest_point_lags(
-    video_info_dict: dict, frame_rate: float
+    video_info_dict: dict, frame_rate: float, brightness_ratio_threshold: float = 3
 ) -> Dict[str, float]:
-    """Take a video info dictionary, find the first significant contrast change in the video, and return it's time in second as the lag.
+    """Take a video info dictionary, find the first significant contrast change in the video, and return its time in second as the lag.
     The lag dict is normalized so that the lag of the latest video to start in time is 0, and all other lags are positive.
     """
     lag_dict = {
-        video_dict["camera_name"]: find_first_brightness_change(
-            video_filepath=str(video_dict["video pathstring"]),
-            brightness_ratio_threshold=5,
+        video_dict["camera name"]: find_first_brightness_change(
+            video_pathstring=str(video_dict["video pathstring"]),
+            brightness_ratio_threshold=brightness_ratio_threshold,
         )
         / frame_rate
         for video_dict in video_info_dict.values()
     }
 
-    normalized_lag_dict = normalize_lag_dictionary(lag_dictionary=lag_dict)
-
-    logging.info(
-        f"original lag dict: {lag_dict} normalized lag dict: {normalized_lag_dict}"
-    )
-
-    return normalized_lag_dict
+    return lag_dict
 
 
 if __name__ == "__main__":
