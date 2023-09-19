@@ -1,4 +1,5 @@
 import logging
+from pathlib import Path
 import cv2
 import numpy as np
 from typing import Dict
@@ -25,38 +26,42 @@ def find_first_brightness_change(
     video_pathstring: str, brightness_ratio_threshold: float = 4
 ) -> int:
     logging.info(f"Detecting first brightness change in {video_pathstring}")
+    brightness_array = find_brightness_across_frames(video_pathstring)
+    brightness_difference = np.diff(brightness_array, prepend=brightness_array[0])
+    brightness_double_difference = np.diff(brightness_difference, prepend=brightness_difference[0])
+
+    combined_brightness_metric = brightness_difference * brightness_double_difference
+
+    first_brightness_change = np.argmax(combined_brightness_metric >= brightness_ratio_threshold)
+
+    if first_brightness_change == 0:
+        logging.info("No brightness change exceeded threshold, defaulting to frame with fastest detected brightness change")
+        first_brightness_change = np.argmax(brightness_double_difference)
+    else:
+        logging.info(f"First brightness change detected at frame number {first_brightness_change}")
+
+    return first_brightness_change
+
+def find_brightness_across_frames(video_pathstring: str) -> np.array:
     video_capture_object = cv2.VideoCapture(video_pathstring)
 
-    ret, frame = video_capture_object.read()
-    gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    previous_frame_brightness = np.mean(gray_frame)
+    video_framecount = int(video_capture_object.get(cv2.CAP_PROP_FRAME_COUNT))
+    brightness_array = np.zeros(video_framecount)
 
-    brightness_ratio = 1
-    highest_brightness_ratio = 1
     frame_number = 0
-    brightest_frame_yet = 0
 
-    while ret and brightness_ratio < brightness_ratio_threshold:
-        gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        current_frame_brightness = np.mean(gray_frame)
-
-        brightness_ratio = current_frame_brightness / previous_frame_brightness
-
-        if brightness_ratio > highest_brightness_ratio:
-            highest_brightness_ratio = brightness_ratio
-            brightest_frame_yet = frame_number
-
+    while frame_number < video_framecount:
         ret, frame = video_capture_object.read()
+        gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        brightness_array[frame_number] = np.mean(gray_frame)
         frame_number += 1
 
-    if brightness_ratio > brightness_ratio_threshold:
-        logging.info(f"First brightness change detected at frame number {frame_number}")
-    else:
-        logging.info(
-            f"First brightness change not detected, defaulting to frame with largest detected brightness ratio of {highest_brightness_ratio}"
-        )
+    #TODO: clean this up to put it in the synchronized video folder
+    video_path = Path(video_pathstring)
+    brightness_array_pathstring = str(video_path.parent / video_path.stem) + "_brightness.npy"
+    np.save(file=brightness_array_pathstring, arr=brightness_array)
 
-    return brightest_frame_yet
+    return brightness_array
 
 
 def normalize_lag_dictionary(lag_dictionary: Dict[str, float]) -> Dict[str, float]:
@@ -117,11 +122,3 @@ def find_brightest_point_lags(
     }
 
     return lag_dict
-
-
-if __name__ == "__main__":
-    video_pathstring = "/Users/philipqueen/Downloads/first_brightness_change_check.mov"
-    brightness_change = find_first_brightness_change(
-        video_pathstring=video_pathstring, brightness_ratio_threshold=4
-    )
-    print(brightness_change)
