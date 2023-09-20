@@ -18,8 +18,12 @@ def create_brightness_debug_plots(
 ):
     output_filepath = synchronized_video_folder_path / DEBUG_PLOT_NAME
 
-    list_of_raw_brightness_paths = get_brightness_npys_from_folder(folder_path=raw_video_folder_path)
-    list_of_trimmed_brightness_paths = get_brightness_npys_from_folder(folder_path=synchronized_video_folder_path)
+    list_of_raw_brightness_paths = get_brightness_npys_from_folder(
+        folder_path=raw_video_folder_path
+    )
+    list_of_trimmed_brightness_paths = get_brightness_npys_from_folder(
+        folder_path=synchronized_video_folder_path
+    )
 
     logging.info("Creating debug plots")
     plot_brightness_across_frames(
@@ -45,11 +49,10 @@ def create_audio_debug_plots(synchronized_video_folder_path: Path):
     )
 
 
-def get_brightness_npys_from_folder(
-    folder_path: Path
-) -> List[Path]:
+def get_brightness_npys_from_folder(folder_path: Path) -> List[Path]:
     search_extension = "*" + BRIGHTNESS_SUFFIX + ".npy"
     return Path(folder_path).glob(search_extension)
+
 
 def get_audio_paths_from_folder(
     folder_path: Path, file_extension: str = ".wav"
@@ -89,6 +92,7 @@ def plot_brightness_across_frames(
 
     logging.info(f"Saving debug plots to: {output_filepath}")
     plt.savefig(output_filepath)
+
 
 def plot_audio_waveforms(
     raw_audio_filepath_list: List[Path],

@@ -1,7 +1,10 @@
 import time
 import logging
 from pathlib import Path
-from skelly_synchronize.core_processes.debugging.debug_plots import create_audio_debug_plots, create_brightness_debug_plots
+from skelly_synchronize.core_processes.debugging.debug_plots import (
+    create_audio_debug_plots,
+    create_brightness_debug_plots,
+)
 
 from skelly_synchronize.utils.get_video_files import get_video_file_list
 from skelly_synchronize.core_processes.audio_utilities import (
@@ -166,7 +169,9 @@ def synchronize_videos_from_brightness(
     """
     start_timer = time.time()
 
-    logging.info(f"Synchronizing videos with a brightness ratio threshold of {brightness_ratio_threshold}")
+    logging.info(
+        f"Synchronizing videos with a brightness ratio threshold of {brightness_ratio_threshold}"
+    )
 
     video_file_list = get_video_file_list(
         folder_path=raw_video_folder_path, file_type=file_type
@@ -191,7 +196,9 @@ def synchronize_videos_from_brightness(
 
     # find the lags between starting times
     lag_dict = find_brightest_point_lags(
-        video_info_dict=video_info_dict, frame_rate=fps, brightness_ratio_threshold=brightness_ratio_threshold
+        video_info_dict=video_info_dict,
+        frame_rate=fps,
+        brightness_ratio_threshold=brightness_ratio_threshold,
     )
 
     trim_videos(
@@ -230,7 +237,7 @@ def synchronize_videos_from_brightness(
     if create_debug_plots_bool:
         create_brightness_debug_plots(
             raw_video_folder_path=raw_video_folder_path,
-            synchronized_video_folder_path=synchronized_video_folder_path
+            synchronized_video_folder_path=synchronized_video_folder_path,
         )
 
     end_timer = time.time()

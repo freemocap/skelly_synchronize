@@ -9,11 +9,14 @@ from PyQt6.QtWidgets import (
     QMainWindow,
     QLabel,
     QLineEdit,
-    QHBoxLayout
+    QHBoxLayout,
 )
 
 from gui.widgets.run_button_widget import RunButtonWidget
-from skelly_synchronize.skelly_synchronize import synchronize_videos_from_audio, synchronize_videos_from_brightness
+from skelly_synchronize.skelly_synchronize import (
+    synchronize_videos_from_audio,
+    synchronize_videos_from_brightness,
+)
 
 
 class MainWindow(QMainWindow):
@@ -69,7 +72,9 @@ class MainWindow(QMainWindow):
         self.run_brightness_synch_button.clicked.connect(
             lambda: synchronize_videos_from_brightness(
                 raw_video_folder_path=self._folder_path,
-                brightness_ratio_threshold=float(self.brightness_threshold_lineedit.text()),
+                brightness_ratio_threshold=float(
+                    self.brightness_threshold_lineedit.text()
+                ),
             )
         )
 

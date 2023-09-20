@@ -30,19 +30,28 @@ def find_first_brightness_change(
     logging.info(f"Detecting first brightness change in {video_pathstring}")
     brightness_array = find_brightness_across_frames(video_pathstring)
     brightness_difference = np.diff(brightness_array, prepend=brightness_array[0])
-    brightness_double_difference = np.diff(brightness_difference, prepend=brightness_difference[0])
+    brightness_double_difference = np.diff(
+        brightness_difference, prepend=brightness_difference[0]
+    )
 
     combined_brightness_metric = brightness_difference * brightness_double_difference
 
-    first_brightness_change = np.argmax(combined_brightness_metric >= brightness_ratio_threshold)
+    first_brightness_change = np.argmax(
+        combined_brightness_metric >= brightness_ratio_threshold
+    )
 
     if first_brightness_change == 0:
-        logging.info("No brightness change exceeded threshold, defaulting to frame with fastest detected brightness change")
+        logging.info(
+            "No brightness change exceeded threshold, defaulting to frame with fastest detected brightness change"
+        )
         first_brightness_change = np.argmax(brightness_double_difference)
     else:
-        logging.info(f"First brightness change detected at frame number {first_brightness_change}")
+        logging.info(
+            f"First brightness change detected at frame number {first_brightness_change}"
+        )
 
     return first_brightness_change
+
 
 def find_brightness_across_frames(video_pathstring: str) -> np.array:
     video_capture_object = cv2.VideoCapture(video_pathstring)
@@ -59,7 +68,9 @@ def find_brightness_across_frames(video_pathstring: str) -> np.array:
         frame_number += 1
 
     video_path = Path(video_pathstring)
-    brightness_array_pathstring = str(video_path.parent / video_path.stem) + BRIGHTNESS_SUFFIX + ".npy"
+    brightness_array_pathstring = (
+        str(video_path.parent / video_path.stem) + BRIGHTNESS_SUFFIX + ".npy"
+    )
     np.save(file=brightness_array_pathstring, arr=brightness_array)
 
     return brightness_array
