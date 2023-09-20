@@ -25,9 +25,13 @@ sys.path.insert(0, str(base_package_path))  # add parent directory to sys.path
 
 from skelly_synchronize.system.default_paths import get_log_file_path
 from skelly_synchronize.system.logging_configuration import configure_logging
-from skelly_synchronize.skelly_synchronize import synchronize_videos_from_audio, synchronize_videos_from_brightness  # noqa
+from skelly_synchronize.skelly_synchronize import (
+    synchronize_videos_from_audio,
+    synchronize_videos_from_brightness,
+)  # noqa
 from skelly_synchronize.core_processes.debugging.debug_plots import (
-    create_audio_debug_plots, create_brightness_debug_plots
+    create_audio_debug_plots,
+    create_brightness_debug_plots,
 )  # noqa
 
 
