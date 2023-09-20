@@ -1,7 +1,11 @@
 import logging
+from pathlib import Path
+import cv2
 import numpy as np
 from typing import Dict
 from scipy import signal
+
+from skelly_synchronize.system.paths_and_file_names import BRIGHTNESS_SUFFIX
 
 
 def cross_correlate(audio1, audio2):
@@ -20,6 +24,58 @@ def cross_correlate(audio1, audio2):
     return lag
 
 
+def find_first_brightness_change(
+    video_pathstring: str, brightness_ratio_threshold: float = 1000
+) -> int:
+    logging.info(f"Detecting first brightness change in {video_pathstring}")
+    brightness_array = find_brightness_across_frames(video_pathstring)
+    brightness_difference = np.diff(brightness_array, prepend=brightness_array[0])
+    brightness_double_difference = np.diff(
+        brightness_difference, prepend=brightness_difference[0]
+    )
+
+    combined_brightness_metric = brightness_difference * brightness_double_difference
+
+    first_brightness_change = np.argmax(
+        combined_brightness_metric >= brightness_ratio_threshold
+    )
+
+    if first_brightness_change == 0:
+        logging.info(
+            "No brightness change exceeded threshold, defaulting to frame with fastest detected brightness change"
+        )
+        first_brightness_change = np.argmax(brightness_double_difference)
+    else:
+        logging.info(
+            f"First brightness change detected at frame number {first_brightness_change}"
+        )
+
+    return first_brightness_change
+
+
+def find_brightness_across_frames(video_pathstring: str) -> np.array:
+    video_capture_object = cv2.VideoCapture(video_pathstring)
+
+    video_framecount = int(video_capture_object.get(cv2.CAP_PROP_FRAME_COUNT))
+    brightness_array = np.zeros(video_framecount)
+
+    frame_number = 0
+
+    while frame_number < video_framecount:
+        ret, frame = video_capture_object.read()
+        gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        brightness_array[frame_number] = np.mean(gray_frame)
+        frame_number += 1
+
+    video_path = Path(video_pathstring)
+    brightness_array_pathstring = (
+        str(video_path.parent / video_path.stem) + BRIGHTNESS_SUFFIX + ".npy"
+    )
+    np.save(file=brightness_array_pathstring, arr=brightness_array)
+
+    return brightness_array
+
+
 def normalize_lag_dictionary(lag_dictionary: Dict[str, float]) -> Dict[str, float]:
     """Subtract every value in the dict from the max value.
     This creates a normalized lag dict where the latest video has lag of 0.
@@ -33,9 +89,11 @@ def normalize_lag_dictionary(lag_dictionary: Dict[str, float]) -> Dict[str, floa
     return normalized_lag_dictionary
 
 
-def find_lags(audio_signal_dict: dict, sample_rate: int) -> Dict[str, float]:
-    """Take a file list containing video and audio files, as well as the sample rate of the audio, cross correlate the audio files, and output a lag list.
-    The lag list is normalized so that the lag of the latest video to start in time is 0, and all other lags are positive.
+def find_cross_correlation_lags(
+    audio_signal_dict: dict, sample_rate: int
+) -> Dict[str, float]:
+    """Take a dictionary of audio signals, as well as the sample rate of the audio, cross correlate the audio files, and output a lag dictionary.
+    The lag dict is normalized so that the lag of the latest video to start in time is 0, and all other lags are positive.
     """
     comparison_file_key = next(iter(audio_signal_dict))
     logging.info(
@@ -58,3 +116,21 @@ def find_lags(audio_signal_dict: dict, sample_rate: int) -> Dict[str, float]:
     )
 
     return normalized_lag_dict
+
+
+def find_brightest_point_lags(
+    video_info_dict: dict, frame_rate: float, brightness_ratio_threshold: float = 1000
+) -> Dict[str, float]:
+    """Take a video info dictionary, find the first significant contrast change in the video, and return its time in second as the lag.
+    The lag dict is normalized so that the lag of the latest video to start in time is 0, and all other lags are positive.
+    """
+    lag_dict = {
+        video_dict["camera name"]: find_first_brightness_change(
+            video_pathstring=str(video_dict["video pathstring"]),
+            brightness_ratio_threshold=brightness_ratio_threshold,
+        )
+        / frame_rate
+        for video_dict in video_info_dict.values()
+    }
+
+    return lag_dict
