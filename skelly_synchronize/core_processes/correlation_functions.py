@@ -5,6 +5,8 @@ import numpy as np
 from typing import Dict
 from scipy import signal
 
+from skelly_synchronize.system.paths_and_file_names import BRIGHTNESS_SUFFIX
+
 
 def cross_correlate(audio1, audio2):
     """Take two audio files, synchronize them using cross correlation, and trim them to the same length.
@@ -23,7 +25,7 @@ def cross_correlate(audio1, audio2):
 
 
 def find_first_brightness_change(
-    video_pathstring: str, brightness_ratio_threshold: float = 4
+    video_pathstring: str, brightness_ratio_threshold: float = 1000
 ) -> int:
     logging.info(f"Detecting first brightness change in {video_pathstring}")
     brightness_array = find_brightness_across_frames(video_pathstring)
@@ -56,9 +58,8 @@ def find_brightness_across_frames(video_pathstring: str) -> np.array:
         brightness_array[frame_number] = np.mean(gray_frame)
         frame_number += 1
 
-    #TODO: clean this up to put it in the synchronized video folder
     video_path = Path(video_pathstring)
-    brightness_array_pathstring = str(video_path.parent / video_path.stem) + "_brightness.npy"
+    brightness_array_pathstring = str(video_path.parent / video_path.stem) + BRIGHTNESS_SUFFIX + ".npy"
     np.save(file=brightness_array_pathstring, arr=brightness_array)
 
     return brightness_array
@@ -107,7 +108,7 @@ def find_cross_correlation_lags(
 
 
 def find_brightest_point_lags(
-    video_info_dict: dict, frame_rate: float, brightness_ratio_threshold: float = 3
+    video_info_dict: dict, frame_rate: float, brightness_ratio_threshold: float = 1000
 ) -> Dict[str, float]:
     """Take a video info dictionary, find the first significant contrast change in the video, and return its time in second as the lag.
     The lag dict is normalized so that the lag of the latest video to start in time is 0, and all other lags are positive.

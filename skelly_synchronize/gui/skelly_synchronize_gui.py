@@ -56,7 +56,7 @@ class MainWindow(QMainWindow):
         self._layout.addWidget(self.run_brightness_synch_button)
 
         hbox = QHBoxLayout()
-        brightness_threshold_default = 4
+        brightness_threshold_default = 1000
         hbox.addWidget(QLabel("Brightness ratio threshold: "))
         self.brightness_threshold_lineedit = QLineEdit()
         self.brightness_threshold_lineedit.setText(str(brightness_threshold_default))

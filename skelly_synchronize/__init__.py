@@ -27,7 +27,7 @@ from skelly_synchronize.system.default_paths import get_log_file_path
 from skelly_synchronize.system.logging_configuration import configure_logging
 from skelly_synchronize.skelly_synchronize import synchronize_videos_from_audio  # noqa
 from skelly_synchronize.core_processes.debugging.debug_plots import (
-    create_debug_plots,
+    create_audio_debug_plots,
 )  # noqa
 
 

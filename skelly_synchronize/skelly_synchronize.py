@@ -1,7 +1,7 @@
 import time
 import logging
 from pathlib import Path
-from skelly_synchronize.core_processes.debugging.debug_plots import create_debug_plots
+from skelly_synchronize.core_processes.debugging.debug_plots import create_audio_debug_plots, create_brightness_debug_plots
 
 from skelly_synchronize.utils.get_video_files import get_video_file_list
 from skelly_synchronize.core_processes.audio_utilities import (
@@ -10,6 +10,7 @@ from skelly_synchronize.core_processes.audio_utilities import (
 )
 from skelly_synchronize.core_processes.correlation_functions import (
     find_brightest_point_lags,
+    find_brightness_across_frames,
     find_cross_correlation_lags,
 )
 from skelly_synchronize.core_processes.video_functions.video_utilities import (
@@ -139,7 +140,7 @@ def synchronize_videos_from_audio(
         ],
     )
     if create_debug_plots_bool:
-        create_debug_plots(
+        create_audio_debug_plots(
             synchronized_video_folder_path=synchronized_video_folder_path
         )
 
@@ -155,7 +156,8 @@ def synchronize_videos_from_brightness(
     synchronized_video_folder_path: Path = None,
     file_type: str = ".mp4",
     video_handler: str = "deffcode",
-    brightness_ratio_threshold: float = 3,
+    brightness_ratio_threshold: float = 1000,
+    create_debug_plots_bool: bool = True,
 ):
     """Synchronize all videos with the given file type in the base path folder using the first frame in each video with a high change in brightness between frames.
     Uses deffcode and to handle the video files as default, set "video_handler" to "ffmpeg" to use ffmpeg methods instead.
@@ -221,6 +223,15 @@ def synchronize_videos_from_brightness(
         },
         output_file_path=synchronized_video_folder_path / DEBUG_TOML_NAME,
     )
+
+    for video_dict in synchronized_video_info_dict.values():
+        find_brightness_across_frames(video_pathstring=video_dict["video pathstring"])
+
+    if create_debug_plots_bool:
+        create_brightness_debug_plots(
+            raw_video_folder_path=raw_video_folder_path,
+            synchronized_video_folder_path=synchronized_video_folder_path
+        )
 
     end_timer = time.time()
 

@@ -17,3 +17,7 @@ LAG_DICTIONARY_NAME = "Lag_dictionary"
 # figshare info
 FIGSHARE_ZIP_FILE_URL = "https://figshare.com/ndownloader/files/41066489"
 FIGSHARE_SAMPLE_DATA_FILE_NAME = "skelly_synchronize_sample_data"
+
+# string constants
+SYNCED_VIDEO_PRECURSOR = "synced_"
+BRIGHTNESS_SUFFIX = "_brightness"
