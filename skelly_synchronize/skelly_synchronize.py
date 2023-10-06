@@ -5,6 +5,7 @@ from skelly_synchronize.core_processes.debugging.debug_plots import (
     create_audio_debug_plots,
     create_brightness_debug_plots,
 )
+from skelly_synchronize.core_processes.normalize_framerates import normalize_framerates
 
 from skelly_synchronize.utils.get_video_files import get_video_file_list
 from skelly_synchronize.core_processes.audio_utilities import (
@@ -39,6 +40,7 @@ from skelly_synchronize.system.paths_and_file_names import (
     AUDIO_NAME,
     DEBUG_TOML_NAME,
     LAG_DICTIONARY_NAME,
+    NORMALIZED_VIDEOS_FOLDER_NAME,
     RAW_VIDEO_NAME,
     SYNCHRONIZED_VIDEO_NAME,
     SYNCHRONIZED_VIDEOS_FOLDER_NAME,
@@ -51,11 +53,10 @@ logging.basicConfig(level=logging.INFO)
 def synchronize_videos_from_audio(
     raw_video_folder_path: Path,
     synchronized_video_folder_path: Path = None,
-    file_type: str = ".mp4",
     video_handler: str = "deffcode",
     create_debug_plots_bool: bool = True,
 ):
-    """Synchronize all videos with the given file type in the base path folder using audio cross correlation.
+    """Synchronize all videos in the base path folder using audio cross correlation.
     Uses deffcode and to handle the video files as default, set "video_handler" to "ffmpeg" to use ffmpeg methods instead.
     ffmpeg is used to get audio from the video files with either method.
 
@@ -64,8 +65,8 @@ def synchronize_videos_from_audio(
     start_timer = time.time()
 
     video_file_list = get_video_file_list(
-        folder_path=raw_video_folder_path, file_type=file_type
-    )
+        folder_path=raw_video_folder_path
+    )  # TODO: look for videos that aren't just .mp4s
     if synchronized_video_folder_path is None:
         synchronized_video_folder_path = create_directory(
             parent_directory=raw_video_folder_path.parent,
@@ -82,15 +83,33 @@ def synchronize_videos_from_audio(
     video_info_dict = create_video_info_dict(
         video_filepath_list=video_file_list, video_handler="ffmpeg"
     )
+
+    # get video fps and audio sample rate
+    fps_list = get_fps_list(video_info_dict=video_info_dict)
+    audio_sample_rates = get_audio_sample_rates(video_info_dict=video_info_dict)
+
+    if len(set(fps_list)) > 1 or len(set(audio_sample_rates)) > 1:
+        normalized_video_folder_path = normalize_framerates(
+            raw_video_folder_path=raw_video_folder_path,
+            video_info_dict=video_info_dict,
+            fps_list=fps_list,
+            audio_samplerate_list=audio_sample_rates,
+        )
+
+        video_file_list = get_video_file_list(folder_path=normalized_video_folder_path)
+
+        video_info_dict = create_video_info_dict(
+            video_filepath_list=video_file_list, video_handler="ffmpeg"
+        )
+
+        fps_list = get_fps_list(video_info_dict=video_info_dict)
+        audio_sample_rates = get_audio_sample_rates(video_info_dict=video_info_dict)
+
     audio_signal_dict = extract_audio_files(
         video_info_dict=video_info_dict,
         audio_extension="wav",
         audio_folder_path=audio_folder_path,
     )
-
-    # get video fps and audio sample rate
-    fps_list = get_fps_list(video_info_dict=video_info_dict)
-    audio_sample_rates = get_audio_sample_rates(audio_signal_dict=audio_signal_dict)
 
     # frame rates and audio sample rates must be the same duration for the trimming process to work correctly
     fps = check_list_values_are_equal(input_list=fps_list)
@@ -117,9 +136,7 @@ def synchronize_videos_from_audio(
     )
 
     synchronized_video_info_dict = create_video_info_dict(
-        video_filepath_list=get_video_file_list(
-            synchronized_video_folder_path, file_type=file_type
-        )
+        video_filepath_list=get_video_file_list(synchronized_video_folder_path)
     )
 
     save_dictionaries_to_toml(
@@ -157,12 +174,11 @@ def synchronize_videos_from_audio(
 def synchronize_videos_from_brightness(
     raw_video_folder_path: Path,
     synchronized_video_folder_path: Path = None,
-    file_type: str = ".mp4",
     video_handler: str = "deffcode",
     brightness_ratio_threshold: float = 1000,
     create_debug_plots_bool: bool = True,
 ):
-    """Synchronize all videos with the given file type in the base path folder using the first frame in each video with a high change in brightness between frames.
+    """Synchronize all videos in the base path folder using the first frame in each video with a high change in brightness between frames.
     Uses deffcode and to handle the video files as default, set "video_handler" to "ffmpeg" to use ffmpeg methods instead.
 
     Returns the folder path of the synchronized video folder.
@@ -173,9 +189,7 @@ def synchronize_videos_from_brightness(
         f"Synchronizing videos with a brightness ratio threshold of {brightness_ratio_threshold}"
     )
 
-    video_file_list = get_video_file_list(
-        folder_path=raw_video_folder_path, file_type=file_type
-    )
+    video_file_list = get_video_file_list(folder_path=raw_video_folder_path)
     if synchronized_video_folder_path is None:
         synchronized_video_folder_path = create_directory(
             parent_directory=raw_video_folder_path.parent,
@@ -190,6 +204,21 @@ def synchronize_videos_from_brightness(
 
     # get video fps
     fps_list = get_fps_list(video_info_dict=video_info_dict)
+
+    if len(set(fps_list)) > 1:
+        normalized_video_folder_path = normalize_framerates(
+            raw_video_folder_path=raw_video_folder_path,
+            video_info_dict=video_info_dict,
+            fps_list=fps_list,
+        )
+
+        video_file_list = get_video_file_list(folder_path=normalized_video_folder_path)
+
+        video_info_dict = create_video_info_dict(
+            video_filepath_list=video_file_list, video_handler="ffmpeg"
+        )
+
+        fps_list = get_fps_list(video_info_dict=video_info_dict)
 
     # frame rates must be the same duration for the trimming process to work correctly
     fps = check_list_values_are_equal(input_list=fps_list)
@@ -217,9 +246,7 @@ def synchronize_videos_from_brightness(
     )
 
     synchronized_video_info_dict = create_video_info_dict(
-        video_filepath_list=get_video_file_list(
-            synchronized_video_folder_path, file_type=file_type
-        )
+        video_filepath_list=get_video_file_list(synchronized_video_folder_path)
     )
 
     save_dictionaries_to_toml(
@@ -235,8 +262,12 @@ def synchronize_videos_from_brightness(
         find_brightness_across_frames(video_pathstring=video_dict["video pathstring"])
 
     if create_debug_plots_bool:
+        if Path(raw_video_folder_path / NORMALIZED_VIDEOS_FOLDER_NAME).exists:
+            path_to_npys = raw_video_folder_path / NORMALIZED_VIDEOS_FOLDER_NAME
+        else:
+            path_to_npys = raw_video_folder_path
         create_brightness_debug_plots(
-            raw_video_folder_path=raw_video_folder_path,
+            raw_video_folder_path=path_to_npys,
             synchronized_video_folder_path=synchronized_video_folder_path,
         )
 
@@ -245,11 +276,3 @@ def synchronize_videos_from_brightness(
     logging.info(f"Elapsed processing time in seconds: {end_timer - start_timer}")
 
     return synchronized_video_folder_path
-
-
-if __name__ == "__main__":
-    raw_video_folder_path = Path("path/to/your/folder/of/raw/videos")
-    file_type = "MP4"
-    synchronize_videos_from_audio(
-        raw_video_folder_path=raw_video_folder_path, file_type=file_type
-    )
