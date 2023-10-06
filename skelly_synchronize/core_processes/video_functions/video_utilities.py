@@ -27,9 +27,9 @@ def create_video_info_dict(
     video_info_dict = dict()
     for video_filepath in video_filepath_list:
         video_dict = dict()
-        video_dict["video filepath"] = video_filepath
+        video_dict["video filepath"] = Path(video_filepath)
         video_dict["video pathstring"] = str(video_filepath)
-        video_name = video_filepath.stem
+        video_name = Path(video_filepath).stem
         video_dict["camera name"] = video_name
 
         if video_handler == "ffmpeg":
@@ -103,7 +103,7 @@ def trim_videos(
 
 
 def get_fps_list(video_info_dict: Dict[str, dict]):
-    """Get list of the frames per second in earch video"""
+    """Get list of the frames per second in each video"""
     return [video_dict["video fps"] for video_dict in video_info_dict.values()]
 
 
