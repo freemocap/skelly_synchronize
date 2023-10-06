@@ -21,7 +21,7 @@ def get_number_of_frames_of_videos_in_a_folder(folder_path: Union[str, Path]):
     """
 
     list_of_video_paths = get_video_file_list(
-        folder_path=Path(folder_path), file_type=".mp4"
+        folder_path=Path(folder_path)
     )
 
     if len(list_of_video_paths) == 0:
