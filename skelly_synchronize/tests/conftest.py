@@ -26,7 +26,7 @@ def pytest_sessionstart():
         pytest.raw_video_folder_path
     )
     pytest.video_file_list = get_video_file_list(
-        folder_path=pytest.synchronized_video_folder_path, file_type=".mp4"
+        folder_path=pytest.synchronized_video_folder_path
     )
 
 

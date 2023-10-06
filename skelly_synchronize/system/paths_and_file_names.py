@@ -3,6 +3,7 @@ SYNCHRONIZED_VIDEOS_FOLDER_NAME = "synchronized_videos"
 RAW_VIDEOS_FOLDER_NAME = "raw_videos"
 AUDIO_FILES_FOLDER_NAME = "audio_files"
 TRIMMED_AUDIO_FOLDER_NAME = "trimmed_audio"
+NORMALIZED_VIDEOS_FOLDER_NAME = "normalized_videos"
 
 # file names
 DEBUG_TOML_NAME = "synchronization_debug.toml"

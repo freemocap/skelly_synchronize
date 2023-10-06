@@ -7,15 +7,16 @@ from typing import Dict
 
 from skelly_synchronize.core_processes.video_functions.ffmpeg_functions import (
     extract_audio_from_video_ffmpeg,
+    extract_audio_sample_rate_ffmpeg,
 )
 from skelly_synchronize.system.paths_and_file_names import TRIMMED_AUDIO_FOLDER_NAME
 
 
-def get_audio_sample_rates(audio_signal_dict: Dict[str, float]) -> list:
+def get_audio_sample_rates(video_info_dict: Dict[str, dict]) -> list:
     """Get the sample rates of each audio file and return them in a list"""
     audio_sample_rate_list = [
-        single_audio_dict["sample rate"]
-        for single_audio_dict in audio_signal_dict.values()
+        extract_audio_sample_rate_ffmpeg(file_pathstring=video_dict["video pathstring"])
+        for video_dict in video_info_dict.values()
     ]
 
     return audio_sample_rate_list
