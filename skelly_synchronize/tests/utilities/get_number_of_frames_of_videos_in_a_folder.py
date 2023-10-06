@@ -20,9 +20,7 @@ def get_number_of_frames_of_videos_in_a_folder(folder_path: Union[str, Path]):
     Get the number of frames in the first video in a folder
     """
 
-    list_of_video_paths = get_video_file_list(
-        folder_path=Path(folder_path)
-    )
+    list_of_video_paths = get_video_file_list(folder_path=Path(folder_path))
 
     if len(list_of_video_paths) == 0:
         logger.error(f"No videos found in {folder_path}")
