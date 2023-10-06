@@ -73,6 +73,63 @@ def extract_video_fps_ffmpeg(file_pathstring: str):
     return video_fps
 
 
+def extract_audio_sample_rate_ffmpeg(file_pathstring: str):
+    """Run a subprocess call to get the audio sample rate of a video file using ffmpeg"""
+
+    extract_sample_rate_subprocess = subprocess.run(
+        [
+            "ffprobe",
+            "-v",
+            "error",
+            "-select_streams",
+            "a:0",
+            "-show_entries",
+            "stream=sample_rate",
+            "-of",
+            "default=noprint_wrappers=1:nokey=1",
+            file_pathstring,
+        ],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+    )
+    # get the result, then remove the excess characters to get something like '####'
+    cleaned_stdout = (
+        str(extract_sample_rate_subprocess.stdout).split("'")[1].split("\\")[0]
+    )
+    # convert to float
+    audio_sample_rate = float(cleaned_stdout)
+
+    return audio_sample_rate
+
+
+def normalize_framerates_in_video_ffmpeg(
+    input_video_pathstring: str,
+    output_video_pathstring: str,
+    desired_fps: float = 30,
+    desired_sample_rate: int = 44100,
+):
+    """Run a subprocess call to normalize the framerate and audio sample rate of a video file using ffmpeg"""
+
+    normalize_framerates_subprocess = subprocess.run(
+        [
+            "ffmpeg",
+            "-i",
+            f"{input_video_pathstring}",
+            "-r",
+            f"{desired_fps}",
+            "-ar",
+            f"{desired_sample_rate}",
+            "-y",
+            f"{output_video_pathstring}",
+        ]
+    )
+
+    if normalize_framerates_subprocess.returncode != 0:
+        raise Exception(
+            f"ffmpeg returned code {normalize_framerates_subprocess.returncode}"
+        )
+
+
 def trim_single_video_ffmpeg(
     input_video_pathstring: str,
     start_time: float,
