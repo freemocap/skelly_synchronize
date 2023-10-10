@@ -29,19 +29,3 @@ Two debug files will always be created. The first, `debug_plot.png`, shows a vis
 Videos that do not have the same framerate (and audio files that do not have the same sample rate) will be normalized to have matching framerates, which will create a "normalized_videos" folder inside of the raw videos folder that has normalized copies of the original videos. 
 
 Audio synchronization will place the extracted audio files into the synchronized video folder. Brightness synching will place numpy files containing the brightness of the videos across time in both the raw and synchronized video folders.
-
-# How to run from source
-
-First clone this repository and pip install the `requirements.txt` file.
-
-Synchronize your videos by setting the path to your folder of raw videos and the file types of your videos into `skelly_synchronize.py`, lines 343-344, then run the file. 
-
-<img width="559" alt="skelly_synchronize_main_function" src="https://user-images.githubusercontent.com/24758117/221996311-07dab11f-0104-4407-b921-40cd364b39bc.png">
-
-The terminal output while running should look like this:
-
-<img width="1250" alt="TerminalOutput" src="https://user-images.githubusercontent.com/24758117/221996277-a925c457-205c-411d-aaaa-eda7ca774fed.png">
-
-A `SyncedVideos` folder will be created in the session folder and filled with the synchronized video files. The session folder will also have an `AudioFiles` folder containing audio files of the raw videos, which are used in processing.
-
-<img width="626" alt="FileStructureAfterRunning" src="https://user-images.githubusercontent.com/24758117/220470692-2f573367-1737-4842-b23e-e6fb79b1e4c8.png">
