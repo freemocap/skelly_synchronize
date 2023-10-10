@@ -10,7 +10,8 @@ While running, the GUI window may appear frozen, but the terminal should show th
 
 Skelly_synchronize currently depends on FFmpeg, a command line tool that handles the video files. If you do not have FFmpeg downloaded, you will need to install it separately. You can download FFmpeg here: https://ffmpeg.org/download.html
 
-<img width="593" alt="Skelly_synchronize_gui_window" src="https://user-images.githubusercontent.com/24758117/221995127-340899d7-4f04-4f87-a2d7-ba1d49cd00e2.png">
+<img width="598" alt="Screen Shot 2023-10-10 at 9 51 11 AM" src="https://github.com/freemocap/skelly_synchronize/assets/24758117/2c34a076-90d9-4d8f-bd3a-5b4649586d8c">
+
 
 # Using Skelly Synchronize
 
