@@ -51,7 +51,7 @@ def trim_videos(
     lag_dict: Dict[str, float],
     fps: float,
     video_handler: str = "deffcode",
-) -> list:
+) -> None:
     """Take a list of video files and a list of lags, and make all videos start and end at the same time."""
 
     minimum_duration = find_minimum_video_duration(
