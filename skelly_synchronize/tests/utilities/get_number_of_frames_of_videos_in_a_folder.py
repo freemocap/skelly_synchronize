@@ -1,7 +1,7 @@
 import logging
 import sys
 from pathlib import Path
-from typing import Union
+from typing import List, Union
 
 base_package_path = Path(__file__).parent.parent.parent.parent
 print(f"adding base_package_path: {base_package_path} : to sys.path")
@@ -15,7 +15,7 @@ from skelly_synchronize.tests.utilities.find_frame_count_of_video import (
 logger = logging.getLogger(__name__)
 
 
-def get_number_of_frames_of_videos_in_a_folder(folder_path: Union[str, Path]):
+def get_number_of_frames_of_videos_in_a_folder(folder_path: Union[str, Path]) -> List[int]:
     """
     Get the number of frames in the first video in a folder
     """
@@ -23,8 +23,7 @@ def get_number_of_frames_of_videos_in_a_folder(folder_path: Union[str, Path]):
     list_of_video_paths = get_video_file_list(folder_path=Path(folder_path))
 
     if len(list_of_video_paths) == 0:
-        logger.error(f"No videos found in {folder_path}")
-        return None
+        raise FileNotFoundError(f"No videos found in {folder_path}")
 
     frame_count_list = []
     for video_path in list_of_video_paths:
