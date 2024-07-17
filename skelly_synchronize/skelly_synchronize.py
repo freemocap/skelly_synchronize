@@ -1,6 +1,7 @@
 import time
 import logging
 from pathlib import Path
+from typing import Optional
 from skelly_synchronize.core_processes.debugging.debug_plots import (
     create_audio_debug_plots,
     create_brightness_debug_plots,
@@ -52,7 +53,7 @@ logging.basicConfig(level=logging.INFO)
 
 def synchronize_videos_from_audio(
     raw_video_folder_path: Path,
-    synchronized_video_folder_path: Path = None,
+    synchronized_video_folder_path: Optional[Path] = None,
     video_handler: str = "deffcode",
     create_debug_plots_bool: bool = True,
 ):
@@ -66,7 +67,7 @@ def synchronize_videos_from_audio(
 
     video_file_list = get_video_file_list(
         folder_path=raw_video_folder_path
-    )  # TODO: look for videos that aren't just .mp4s
+    )
     if synchronized_video_folder_path is None:
         synchronized_video_folder_path = create_directory(
             parent_directory=raw_video_folder_path.parent,
@@ -173,7 +174,7 @@ def synchronize_videos_from_audio(
 
 def synchronize_videos_from_brightness(
     raw_video_folder_path: Path,
-    synchronized_video_folder_path: Path = None,
+    synchronized_video_folder_path: Optional[Path] = None,
     video_handler: str = "deffcode",
     brightness_ratio_threshold: float = 1000,
     create_debug_plots_bool: bool = True,

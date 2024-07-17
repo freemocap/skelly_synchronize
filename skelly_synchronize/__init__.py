@@ -28,11 +28,11 @@ from skelly_synchronize.system.logging_configuration import configure_logging
 from skelly_synchronize.skelly_synchronize import (
     synchronize_videos_from_audio,
     synchronize_videos_from_brightness,
-)  # noqa
+)
 from skelly_synchronize.core_processes.debugging.debug_plots import (
     create_audio_debug_plots,
     create_brightness_debug_plots,
-)  # noqa
+)
 
 
-configure_logging(log_file_path=get_log_file_path())
+configure_logging(log_file_path=str(get_log_file_path()))

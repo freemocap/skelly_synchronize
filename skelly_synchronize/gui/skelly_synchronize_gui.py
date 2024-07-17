@@ -12,7 +12,6 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
 )
 
-from gui.widgets.run_button_widget import RunButtonWidget
 from skelly_synchronize.skelly_synchronize import (
     synchronize_videos_from_audio,
     synchronize_videos_from_brightness,
