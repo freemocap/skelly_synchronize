@@ -1,4 +1,5 @@
 import json
+import logging
 import cv2
 from deffcode import FFdecoder, Sourcer
 
@@ -20,6 +21,7 @@ def trim_single_video_deffcode(
     metadata_dictionary = sourcer.retrieve_metadata()
 
     if metadata_dictionary["source_video_orientation"] != 0:
+        logging.info("Video has reversed metadata, changing FFmpeg transpose argument")
         ffparams = {
             "-ffprefixes": ["-noautorotate"],
             "-vf": tranposition_dictionary[
@@ -32,13 +34,13 @@ def trim_single_video_deffcode(
     decoder = FFdecoder(
         str(input_video_pathstring),
         frame_format="bgr24",
-        verbose=True,
+        verbose=False,
         **ffparams,
     ).formulate()
 
     metadata_dictionary = json.loads(decoder.metadata)
 
-    fourcc = cv2.VideoWriter_fourcc(*"mp4v")
+    fourcc = cv2.VideoWriter.fourcc(*"mp4v")
     framerate = metadata_dictionary["output_framerate"]
     framesize = tuple(metadata_dictionary["output_frames_resolution"])
 

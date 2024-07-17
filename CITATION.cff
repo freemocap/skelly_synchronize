@@ -1,0 +1,12 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+  - family-names: Queen
+    given-names: Philip
+  - family-names: Matthis
+    given-names: Jonathan Samir
+    orcid: https://orcid.org/my-orcid?orcid=0000-0003-3683-646X
+
+title: "SkellySynchronize"
+doi: 10.5281/zenodo.10395651
+

@@ -2,7 +2,7 @@ import sys
 import pytest
 from pathlib import Path
 
-print(f"Thank you for using skelly_synchronize!")
+print("Thank you for using skelly_synchronize!")
 print(f"This is printing from: {__file__}")
 
 base_package_path = Path(__file__).parent.parent.parent
@@ -26,7 +26,7 @@ def pytest_sessionstart():
         pytest.raw_video_folder_path
     )
     pytest.video_file_list = get_video_file_list(
-        folder_path=pytest.synchronized_video_folder_path, file_type=".mp4"
+        folder_path=pytest.synchronized_video_folder_path
     )
 
 
