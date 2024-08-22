@@ -1,6 +1,20 @@
+import logging
 import subprocess
+import shutil
 from pathlib import Path
 
+logger = logging.getLogger(__name__)
+
+ffmpeg_string = "ffmpeg"
+ffprobe_string = "ffprobe"
+
+def check_for_ffmpeg():
+    if shutil.which(ffmpeg_string) is None:
+        raise FileNotFoundError("ffmpeg not found, please install ffmpeg and add it to your PATH")
+    
+def check_for_ffprobe():
+    if shutil.which(ffprobe_string) is None:
+        raise FileNotFoundError("ffprobe not found, please install ffmpeg and add it to your PATH")
 
 def extract_audio_from_video_ffmpeg(
     file_pathstring: str,
@@ -10,9 +24,10 @@ def extract_audio_from_video_ffmpeg(
 ):
     """Run a subprocess call to extract the audio from a video file using ffmpeg"""
 
+    check_for_ffmpeg()
     subprocess.run(
         [
-            "ffmpeg",
+            ffmpeg_string,
             "-y",
             "-i",
             file_pathstring,
@@ -26,9 +41,10 @@ def extract_audio_from_video_ffmpeg(
 def extract_video_duration_ffmpeg(file_pathstring: str):
     """Run a subprocess call to get the duration from a video file using ffmpeg"""
 
+    check_for_ffprobe()
     extract_duration_subprocess = subprocess.run(
         [
-            "ffprobe",
+            ffprobe_string,
             "-v",
             "error",
             "-show_entries",
@@ -48,9 +64,10 @@ def extract_video_duration_ffmpeg(file_pathstring: str):
 def extract_video_fps_ffmpeg(file_pathstring: str):
     """Run a subprocess call to get the fps of a video file using ffmpeg"""
 
+    check_for_ffprobe()
     extract_fps_subprocess = subprocess.run(
         [
-            "ffprobe",
+            ffprobe_string,
             "-v",
             "error",
             "-select_streams",
@@ -76,9 +93,10 @@ def extract_video_fps_ffmpeg(file_pathstring: str):
 def extract_audio_sample_rate_ffmpeg(file_pathstring: str):
     """Run a subprocess call to get the audio sample rate of a video file using ffmpeg"""
 
+    check_for_ffprobe()
     extract_sample_rate_subprocess = subprocess.run(
         [
-            "ffprobe",
+            ffprobe_string,
             "-v",
             "error",
             "-select_streams",
@@ -110,9 +128,10 @@ def normalize_framerates_in_video_ffmpeg(
 ):
     """Run a subprocess call to normalize the framerate and audio sample rate of a video file using ffmpeg"""
 
+    check_for_ffmpeg()
     normalize_framerates_subprocess = subprocess.run(
         [
-            "ffmpeg",
+            ffmpeg_string,
             "-i",
             f"{input_video_pathstring}",
             "-r",
@@ -138,9 +157,10 @@ def trim_single_video_ffmpeg(
 ):
     """Run a subprocess call to trim a video from start time to last as long as the desired duration"""
 
+    check_for_ffmpeg()
     subprocess.run(
         [
-            "ffmpeg",
+            ffmpeg_string,
             "-i",
             f"{input_video_pathstring}",
             "-ss",
@@ -162,9 +182,10 @@ def attach_audio_to_video_ffmpeg(
 ):
     """Run a subprocess call to attach audio file back to the video"""
 
+    check_for_ffmpeg()
     attach_audio_subprocess = subprocess.run(
         [
-            "ffmpeg",
+            ffmpeg_string,
             "-i",
             f"{input_video_pathstring}",
             "-i",
@@ -180,4 +201,4 @@ def attach_audio_to_video_ffmpeg(
     )
 
     if attach_audio_subprocess.returncode != 0:
-        print(f"Error occurred: {attach_audio_subprocess.stderr.decode('utf-8')}")
+        logger.error(f"Error occurred: {attach_audio_subprocess.stderr.decode('utf-8')}")
