@@ -1,6 +1,7 @@
 import time
 import logging
 from pathlib import Path
+from typing import Optional
 from skelly_synchronize.core_processes.debugging.debug_plots import (
     create_audio_debug_plots,
     create_brightness_debug_plots,
@@ -47,12 +48,11 @@ from skelly_synchronize.system.paths_and_file_names import (
     AUDIO_FILES_FOLDER_NAME,
 )
 
-logging.basicConfig(level=logging.INFO)
-
+logger = logging.getLogger(__name__)
 
 def synchronize_videos_from_audio(
     raw_video_folder_path: Path,
-    synchronized_video_folder_path: Path = None,
+    synchronized_video_folder_path: Optional[Path] = None,
     video_handler: str = "deffcode",
     create_debug_plots_bool: bool = True,
 ):
@@ -131,7 +131,7 @@ def synchronize_videos_from_audio(
     synchronized_video_framecounts = get_number_of_frames_of_videos_in_a_folder(
         folder_path=synchronized_video_folder_path
     )
-    logging.info(
+    logger.info(
         f"All videos are {check_list_values_are_equal(synchronized_video_framecounts)} frames long"
     )
 
@@ -166,7 +166,7 @@ def synchronize_videos_from_audio(
 
     end_timer = time.time()
 
-    logging.info(f"Elapsed processing time in seconds: {end_timer - start_timer}")
+    logger.info(f"Elapsed processing time in seconds: {end_timer - start_timer}")
 
     return synchronized_video_folder_path
 
@@ -185,7 +185,7 @@ def synchronize_videos_from_brightness(
     """
     start_timer = time.time()
 
-    logging.info(
+    logger.info(
         f"Synchronizing videos with a brightness ratio threshold of {brightness_ratio_threshold}"
     )
 
@@ -241,7 +241,7 @@ def synchronize_videos_from_brightness(
     synchronized_video_framecounts = get_number_of_frames_of_videos_in_a_folder(
         folder_path=synchronized_video_folder_path
     )
-    logging.info(
+    logger.info(
         f"All videos are {check_list_values_are_equal(synchronized_video_framecounts)} frames long"
     )
 
@@ -273,6 +273,6 @@ def synchronize_videos_from_brightness(
 
     end_timer = time.time()
 
-    logging.info(f"Elapsed processing time in seconds: {end_timer - start_timer}")
+    logger.info(f"Elapsed processing time in seconds: {end_timer - start_timer}")
 
     return synchronized_video_folder_path

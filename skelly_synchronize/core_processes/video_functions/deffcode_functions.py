@@ -7,6 +7,8 @@ from skelly_synchronize.utils.check_if_video_has_reversed_metadata import (
     check_if_video_has_reversed_metadata,
 )
 
+logger = logging.getLogger(__name__)
+
 
 def trim_single_video_deffcode(
     input_video_pathstring: str,
@@ -18,7 +20,7 @@ def trim_single_video_deffcode(
     )
 
     if vertical_video_bool:
-        logging.info("Video has reversed metadata, changing FFmpeg transpose argument")
+        logger.info("Video has reversed metadata, changing FFmpeg transpose argument")
         ffparams = {"-ffprefixes": ["-noautorotate"], "-vf": "transpose=1"}
     else:
         ffparams = {}
