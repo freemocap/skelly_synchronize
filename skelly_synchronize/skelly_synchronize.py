@@ -50,6 +50,7 @@ from skelly_synchronize.system.paths_and_file_names import (
 
 logger = logging.getLogger(__name__)
 
+
 def synchronize_videos_from_audio(
     raw_video_folder_path: Path,
     synchronized_video_folder_path: Optional[Path] = None,

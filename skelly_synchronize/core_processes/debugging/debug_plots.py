@@ -14,6 +14,7 @@ from skelly_synchronize.system.paths_and_file_names import (
 
 logger = logging.getLogger(__name__)
 
+
 def create_brightness_debug_plots(
     raw_video_folder_path: Path, synchronized_video_folder_path: Path
 ):

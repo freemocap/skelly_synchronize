@@ -8,13 +8,20 @@ logger = logging.getLogger(__name__)
 ffmpeg_string = "ffmpeg"
 ffprobe_string = "ffprobe"
 
+
 def check_for_ffmpeg():
     if shutil.which(ffmpeg_string) is None:
-        raise FileNotFoundError("ffmpeg not found, please install ffmpeg and add it to your PATH")
-    
+        raise FileNotFoundError(
+            "ffmpeg not found, please install ffmpeg and add it to your PATH"
+        )
+
+
 def check_for_ffprobe():
     if shutil.which(ffprobe_string) is None:
-        raise FileNotFoundError("ffprobe not found, please install ffmpeg and add it to your PATH")
+        raise FileNotFoundError(
+            "ffprobe not found, please install ffmpeg and add it to your PATH"
+        )
+
 
 def extract_audio_from_video_ffmpeg(
     file_pathstring: str,
@@ -201,4 +208,6 @@ def attach_audio_to_video_ffmpeg(
     )
 
     if attach_audio_subprocess.returncode != 0:
-        logger.error(f"Error occurred: {attach_audio_subprocess.stderr.decode('utf-8')}")
+        logger.error(
+            f"Error occurred: {attach_audio_subprocess.stderr.decode('utf-8')}"
+        )
