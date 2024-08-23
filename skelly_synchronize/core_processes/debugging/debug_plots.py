@@ -5,6 +5,7 @@ import numpy as np
 from pathlib import Path
 from typing import List
 
+from skelly_synchronize.system.file_extensions import NUMPY_EXTENSION, AudioExtension
 from skelly_synchronize.system.paths_and_file_names import (
     BRIGHTNESS_SUFFIX,
     DEBUG_PLOT_NAME,
@@ -50,15 +51,15 @@ def create_audio_debug_plots(synchronized_video_folder_path: Path):
 
 
 def get_brightness_npys_from_folder(folder_path: Path) -> List[Path]:
-    search_extension = "*" + BRIGHTNESS_SUFFIX + ".npy"
-    return Path(folder_path).glob(search_extension)
+    search_extension = f"*{BRIGHTNESS_SUFFIX}.{NUMPY_EXTENSION}"
+    return list(Path(folder_path).glob(search_extension))
 
 
 def get_audio_paths_from_folder(
-    folder_path: Path, file_extension: str = ".wav"
+    folder_path: Path, audio_extension: AudioExtension = AudioExtension.WAV
 ) -> List[Path]:
-    search_extension = "*" + file_extension.lower()
-    return Path(folder_path).glob(search_extension)
+    search_extension = f"*.{audio_extension.value}"
+    return list(Path(folder_path).glob(search_extension))
 
 
 def plot_brightness_across_frames(

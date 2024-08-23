@@ -24,7 +24,9 @@ def get_number_of_frames_of_videos_in_a_folder(folder_path: Union[str, Path]):
 
     if len(list_of_video_paths) == 0:
         logger.error(f"No videos found in {folder_path}")
-        return None
+        raise ValueError(
+            f"No videos found in {folder_path}, unable to extract framecounts"
+        )
 
     frame_count_list = []
     for video_path in list_of_video_paths:

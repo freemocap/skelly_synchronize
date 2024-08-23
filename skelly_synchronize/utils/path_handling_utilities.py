@@ -1,6 +1,7 @@
 import logging
 from pathlib import Path
 
+from skelly_synchronize.system.file_extensions import VideoExtension
 from skelly_synchronize.system.paths_and_file_names import SYNCED_VIDEO_PRECURSOR
 
 logging.basicConfig(level=logging.INFO)
@@ -25,8 +26,10 @@ def name_synced_video(raw_video_filename: str) -> str:
     """Take a raw video filename, remove the raw prefix if its there, and return the synced video filename"""
     raw_video_filename = str(raw_video_filename)
     if raw_video_filename.split("_")[0] == "raw":
-        synced_video_name = SYNCED_VIDEO_PRECURSOR + raw_video_filename[4:] + ".mp4"
+        synced_video_name = f"{SYNCED_VIDEO_PRECURSOR}{raw_video_filename[4:]}.{VideoExtension.MP4.value}"
     else:
-        synced_video_name = SYNCED_VIDEO_PRECURSOR + raw_video_filename + ".mp4"
+        synced_video_name = (
+            f"{SYNCED_VIDEO_PRECURSOR}{raw_video_filename}.{VideoExtension.MP4.value}"
+        )
 
     return synced_video_name

@@ -32,7 +32,7 @@ def trim_single_video_deffcode(
 
     metadata_dictionary = json.loads(decoder.metadata)
 
-    fourcc = cv2.VideoWriter_fourcc(*"mp4v")
+    fourcc = cv2.VideoWriter.fourcc(*"mp4v")
     framerate = metadata_dictionary["output_framerate"]
     framesize = tuple(metadata_dictionary["output_frames_resolution"])
 

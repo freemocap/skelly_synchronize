@@ -1,12 +1,10 @@
 import subprocess
 from pathlib import Path
+from typing import Union
 
 
 def extract_audio_from_video_ffmpeg(
-    file_pathstring: str,
-    file_name: str,
-    output_folder_path: Path,
-    output_extension="wav",
+    file_pathstring: str, output_file_path: Union[Path, str]
 ):
     """Run a subprocess call to extract the audio from a video file using ffmpeg"""
 
@@ -16,7 +14,7 @@ def extract_audio_from_video_ffmpeg(
             "-y",
             "-i",
             file_pathstring,
-            f"{output_folder_path}/{file_name}.{output_extension}",
+            str(output_file_path),
         ],
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
