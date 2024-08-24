@@ -34,7 +34,7 @@ def extract_audio_files(
     """Get a dictionary with audio files and information from the given video file paths."""
     audio_signal_dict = dict()
     for video_dict in video_info_dict.values():
-        audio_name = f"{video_dict["camera name"]}.{audio_extension.value}"
+        audio_name = f"{video_dict['camera name']}.{audio_extension.value}"
         audio_file_path = audio_folder_path / audio_name
 
         extract_audio_from_video_ffmpeg(
