@@ -14,6 +14,7 @@ from skelly_synchronize.core_processes.video_functions.ffmpeg_functions import (
     extract_video_fps_ffmpeg,
     trim_single_video_ffmpeg,
 )
+from skelly_synchronize.system.file_extensions import AudioExtension, VideoExtension
 from skelly_synchronize.utils.get_video_files import get_video_file_list
 from skelly_synchronize.utils.path_handling_utilities import (
     name_synced_video,
@@ -147,11 +148,12 @@ def attach_audio_to_videos(
         for video in get_video_file_list(synchronized_video_folder_path):
             video_name = video.stem
             if video_name.startswith("synced_"):
-                audio_filename = f"{str(video_name).split('_', maxsplit=1)[-1]}.wav"
+                audio_filename = f"{str(video_name).split('_', maxsplit=1)[-1]}.{AudioExtension.WAV.value}"
             else:
-                audio_filename = video_name + ".wav"
+                audio_filename = f"{video_name}.{AudioExtension.WAV.value}"
             output_video_pathstring = str(
-                Path(temp_dir) / f"{video_name}_with_audio_temp.mp4"
+                Path(temp_dir)
+                / f"{video_name}_with_audio_temp.{VideoExtension.MP4.value}"
             )
 
             logger.info(f"Attaching audio to video {video_name}")

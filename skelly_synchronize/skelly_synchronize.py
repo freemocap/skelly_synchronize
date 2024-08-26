@@ -47,6 +47,7 @@ from skelly_synchronize.system.paths_and_file_names import (
     SYNCHRONIZED_VIDEOS_FOLDER_NAME,
     AUDIO_FILES_FOLDER_NAME,
 )
+from skelly_synchronize.system.file_extensions import AudioExtension
 
 logger = logging.getLogger(__name__)
 
@@ -106,7 +107,7 @@ def synchronize_videos_from_audio(
 
     audio_signal_dict = extract_audio_files(
         video_info_dict=video_info_dict,
-        audio_extension="wav",
+        audio_extension=AudioExtension.WAV,
         audio_folder_path=audio_folder_path,
     )
 

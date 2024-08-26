@@ -25,7 +25,10 @@ def get_number_of_frames_of_videos_in_a_folder(
     list_of_video_paths = get_video_file_list(folder_path=Path(folder_path))
 
     if len(list_of_video_paths) == 0:
-        raise FileNotFoundError(f"No videos found in {folder_path}")
+        logger.error(f"No videos found in {folder_path}")
+        raise ValueError(
+            f"No videos found in {folder_path}, unable to extract framecounts"
+        )
 
     frame_count_list = []
     for video_path in list_of_video_paths:

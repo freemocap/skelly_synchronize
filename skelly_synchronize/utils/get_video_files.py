@@ -1,12 +1,14 @@
 import logging
 from pathlib import Path
 
+from skelly_synchronize.system.file_extensions import VideoExtension
+
 logger = logging.getLogger(__name__)
 
 
 def get_video_file_list(folder_path: Path) -> list:
     """Return a list of all video files in the base_path folder that match a video file type"""
-    list_of_video_formats = ["mp4", "mkv", "avi", "mpeg", "mov"]
+    list_of_video_formats = [extension.value for extension in VideoExtension]
 
     video_filepath_list = []
     for file_type in list_of_video_formats:

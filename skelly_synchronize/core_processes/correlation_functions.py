@@ -5,14 +5,15 @@ import numpy as np
 from typing import Dict
 from scipy import signal
 
+from skelly_synchronize.system.file_extensions import NUMPY_EXTENSION
 from skelly_synchronize.system.paths_and_file_names import BRIGHTNESS_SUFFIX
 
 logger = logging.getLogger(__name__)
 
 
-def cross_correlate(audio1, audio2):
+def cross_correlate(audio1: np.ndarray, audio2: np.ndarray):
     """Take two audio files, synchronize them using cross correlation, and trim them to the same length.
-    Inputs are two WAV files to be synchronized. Return the lag expressed in terms of the audio sample rate of the clips.
+    Inputs are two audio arrays to be synchronized. Return the lag expressed in terms of the audio sample rate of the clips.
     """
 
     # compute cross correlation with scipy correlate function, which gives the correlation of every different lag value
@@ -70,9 +71,7 @@ def find_brightness_across_frames(video_pathstring: str) -> np.ndarray:
         frame_number += 1
 
     video_path = Path(video_pathstring)
-    brightness_array_pathstring = (
-        str(video_path.parent / video_path.stem) + BRIGHTNESS_SUFFIX + ".npy"
-    )
+    brightness_array_pathstring = f"{str(video_path.parent / video_path.stem)}{BRIGHTNESS_SUFFIX}.{NUMPY_EXTENSION}"
     np.save(file=brightness_array_pathstring, arr=brightness_array)
 
     return brightness_array

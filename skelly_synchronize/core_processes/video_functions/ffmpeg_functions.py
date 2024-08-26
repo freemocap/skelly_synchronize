@@ -2,6 +2,9 @@ import logging
 import subprocess
 import shutil
 from pathlib import Path
+from typing import Union
+
+from skelly_synchronize.system.file_extensions import AudioExtension
 
 logger = logging.getLogger(__name__)
 
@@ -24,25 +27,33 @@ def check_for_ffprobe():
 
 
 def extract_audio_from_video_ffmpeg(
-    file_pathstring: str,
-    file_name: str,
-    output_folder_path: Path,
-    output_extension="wav",
+    file_pathstring: str, output_file_path: Union[Path, str]
 ):
     """Run a subprocess call to extract the audio from a video file using ffmpeg"""
-
     check_for_ffmpeg()
-    subprocess.run(
+    if str(Path(output_file_path).suffix).strip(".") not in {
+        extension.value for extension in AudioExtension
+    }:
+        raise ValueError(
+            f"output path {Path(output_file_path).suffix} is not a valid audio extension, extracting audio requires a valid audio extension"
+        )
+
+    extract_audio_subprocess = subprocess.run(
         [
             ffmpeg_string,
             "-y",
             "-i",
             file_pathstring,
-            f"{output_folder_path}/{file_name}.{output_extension}",
+            str(output_file_path),
         ],
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
     )
+
+    if extract_audio_subprocess.returncode != 0:
+        raise RuntimeError(
+            f"Unable to extract audio from video file {file_pathstring}, check that video has audio"
+        )
 
 
 def extract_video_duration_ffmpeg(file_pathstring: str):
@@ -63,6 +74,12 @@ def extract_video_duration_ffmpeg(file_pathstring: str):
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
     )
+
+    if extract_duration_subprocess.returncode != 0:
+        raise RuntimeError(
+            f"extract duration subprocess failed for video {file_pathstring} with return code {extract_duration_subprocess.returncode}"
+        )
+
     video_duration = float(extract_duration_subprocess.stdout)
 
     return video_duration
@@ -88,6 +105,11 @@ def extract_video_fps_ffmpeg(file_pathstring: str):
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
     )
+    if extract_fps_subprocess.returncode != 0:
+        raise RuntimeError(
+            f"extract fps subprocess failed for video {file_pathstring} with return code {extract_fps_subprocess.returncode}"
+        )
+
     # get the results, then remove the excess characters to get something like '####/###'
     cleaned_stdout = str(extract_fps_subprocess.stdout).split("'")[1].split("\\")[0]
     # separate out numerator and denominator to calculate the fraction
@@ -117,6 +139,11 @@ def extract_audio_sample_rate_ffmpeg(file_pathstring: str):
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
     )
+    if extract_sample_rate_subprocess.returncode != 0:
+        raise RuntimeError(
+            f"extract sample rate subprocess failed for video {file_pathstring} with return code {extract_sample_rate_subprocess.returncode}"
+        )
+
     # get the result, then remove the excess characters to get something like '####'
     cleaned_stdout = (
         str(extract_sample_rate_subprocess.stdout).split("'")[1].split("\\")[0]
@@ -151,8 +178,8 @@ def normalize_framerates_in_video_ffmpeg(
     )
 
     if normalize_framerates_subprocess.returncode != 0:
-        raise Exception(
-            f"ffmpeg returned code {normalize_framerates_subprocess.returncode}"
+        raise RuntimeError(
+            f"Error normalizing video framerate in {input_video_pathstring} with target fps {desired_fps} and target sample rate {desired_sample_rate}, ffmpeg returned code {normalize_framerates_subprocess.returncode}"
         )
 
 
@@ -163,9 +190,8 @@ def trim_single_video_ffmpeg(
     output_video_pathstring: str,
 ):
     """Run a subprocess call to trim a video from start time to last as long as the desired duration"""
-
     check_for_ffmpeg()
-    subprocess.run(
+    trim_video_subprocess = subprocess.run(
         [
             ffmpeg_string,
             "-i",
@@ -180,6 +206,11 @@ def trim_single_video_ffmpeg(
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
     )
+
+    if trim_video_subprocess.returncode != 0:
+        raise RuntimeError(
+            f"trim video subprocess failed for video {input_video_pathstring} with return code {trim_video_subprocess.returncode}"
+        )
 
 
 def attach_audio_to_video_ffmpeg(
@@ -208,6 +239,6 @@ def attach_audio_to_video_ffmpeg(
     )
 
     if attach_audio_subprocess.returncode != 0:
-        logger.error(
-            f"Error occurred: {attach_audio_subprocess.stderr.decode('utf-8')}"
+        raise RuntimeError(
+            f"Error occurred attaching audio to video {input_video_pathstring} with return code {attach_audio_subprocess.returncode}"
         )
