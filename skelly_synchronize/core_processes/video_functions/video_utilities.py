@@ -20,6 +20,8 @@ from skelly_synchronize.utils.path_handling_utilities import (
     name_synced_video,
 )
 
+logger = logging.getLogger(__name__)
+
 
 def create_video_info_dict(
     video_filepath_list: list, video_handler: str = "ffmpeg"
@@ -61,7 +63,7 @@ def trim_videos(
     minimum_frames = int(minimum_duration * fps)
 
     for video_dict in video_info_dict.values():
-        logging.debug(f"trimming video file {video_dict['camera name']}")
+        logger.debug(f"trimming video file {video_dict['camera name']}")
         synced_video_name = name_synced_video(
             raw_video_filename=video_dict["camera name"]
         )
@@ -73,8 +75,8 @@ def trim_videos(
         )
 
         if video_handler == "ffmpeg":
-            logging.info(f"Saving video - Cam name: {video_dict['camera name']}")
-            logging.info(f"desired saving duration is: {minimum_duration} seconds")
+            logger.info(f"Saving video - Cam name: {video_dict['camera name']}")
+            logger.info(f"desired saving duration is: {minimum_duration} seconds")
             trim_single_video_ffmpeg(
                 input_video_pathstring=video_dict["video pathstring"],
                 start_time=start_time,
@@ -83,12 +85,12 @@ def trim_videos(
                     synchronized_folder_path / synced_video_name
                 ),
             )
-            logging.info(
+            logger.info(
                 f"Video Saved - Cam name: {video_dict['camera name']}, Video Duration in Seconds: {minimum_duration}"
             )
         if video_handler == "deffcode":
-            logging.info(f"Saving video - Cam name: {video_dict['camera name']}")
-            logging.info(
+            logger.info(f"Saving video - Cam name: {video_dict['camera name']}")
+            logger.info(
                 f"start frame is: {start_frame} desired saving duration is: {minimum_frames} frames"
             )
             trim_single_video_deffcode(
@@ -98,7 +100,7 @@ def trim_videos(
                     synchronized_folder_path / synced_video_name
                 ),
             )
-            logging.info(
+            logger.info(
                 f"Video Saved - Cam name: {video_dict['camera name']}, Video Duration in Frames: {minimum_frames}"
             )
 
@@ -154,7 +156,7 @@ def attach_audio_to_videos(
                 / f"{video_name}_with_audio_temp.{VideoExtension.MP4.value}"
             )
 
-            logging.info(f"Attaching audio to video {video_name}")
+            logger.info(f"Attaching audio to video {video_name}")
             attach_audio_to_video_ffmpeg(
                 input_video_pathstring=str(video),
                 audio_file_pathstring=str(
