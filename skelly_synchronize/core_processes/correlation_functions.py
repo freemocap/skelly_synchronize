@@ -53,10 +53,10 @@ def find_first_brightness_change(
             f"First brightness change detected at frame number {first_brightness_change}"
         )
 
-    return first_brightness_change
+    return int(first_brightness_change)
 
 
-def find_brightness_across_frames(video_pathstring: str) -> np.array:
+def find_brightness_across_frames(video_pathstring: str) -> np.ndarray:
     video_capture_object = cv2.VideoCapture(video_pathstring)
 
     video_framecount = int(video_capture_object.get(cv2.CAP_PROP_FRAME_COUNT))

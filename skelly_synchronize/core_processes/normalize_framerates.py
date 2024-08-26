@@ -8,6 +8,8 @@ from skelly_synchronize.system.paths_and_file_names import NORMALIZED_VIDEOS_FOL
 
 from skelly_synchronize.utils.path_handling_utilities import create_directory
 
+standard_audio_sample_rate = 44100
+
 
 def normalize_framerates(
     raw_video_folder_path: Path,
@@ -24,11 +26,11 @@ def normalize_framerates(
     fps_list.sort()
     desired_fps = min(fps_list)
 
-    if audio_samplerate_list is not None:
+    if audio_samplerate_list:
         audio_samplerate_list.sort()
         desired_audio_sample_rate = min(audio_samplerate_list)
     else:
-        desired_audio_sample_rate = 44100
+        desired_audio_sample_rate = standard_audio_sample_rate
 
     for video_dict in video_info_dict.values():
         normalize_framerates_in_video_ffmpeg(
