@@ -65,9 +65,7 @@ def synchronize_videos_from_audio(
     """
     start_timer = time.time()
 
-    video_file_list = get_video_file_list(
-        folder_path=raw_video_folder_path
-    )
+    video_file_list = get_video_file_list(folder_path=raw_video_folder_path)
     if synchronized_video_folder_path is None:
         synchronized_video_folder_path = create_directory(
             parent_directory=raw_video_folder_path.parent,
