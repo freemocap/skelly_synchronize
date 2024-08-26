@@ -11,6 +11,8 @@ from skelly_synchronize.core_processes.video_functions.ffmpeg_functions import (
 )
 from skelly_synchronize.system.paths_and_file_names import TRIMMED_AUDIO_FOLDER_NAME
 
+logger = logging.getLogger(__name__)
+
 
 def get_audio_sample_rates(video_info_dict: Dict[str, dict]) -> list:
     """Get the sample rates of each audio file and return them in a list"""
@@ -44,13 +46,13 @@ def extract_audio_files(
         audio_file_path = audio_folder_path / audio_name
 
         if not audio_file_path.is_file():
-            logging.error("Error loading audio file, verify video has audio track")
+            logger.error("Error loading audio file, verify video has audio track")
             raise FileNotFoundError(f"Audio file not found: {audio_file_path}")
 
         audio_signal, sample_rate = librosa.load(path=audio_file_path, sr=None)
 
         audio_duration = librosa.get_duration(y=audio_signal, sr=sample_rate)
-        logging.info(f"audio file {audio_name} is {audio_duration} seconds long")
+        logger.info(f"audio file {audio_name} is {audio_duration} seconds long")
         audio_signal_dict[audio_name] = {
             "audio file": audio_signal,
             "sample rate": sample_rate,
@@ -64,7 +66,7 @@ def extract_audio_files(
 def trim_audio_files(
     audio_folder_path: Path, lag_dictionary: dict, synced_video_length: float
 ):
-    logging.info("Trimming audio files to match synchronized video length")
+    logger.info("Trimming audio files to match synchronized video length")
 
     trimmed_audio_folder_path = Path(audio_folder_path) / TRIMMED_AUDIO_FOLDER_NAME
     trimmed_audio_folder_path.mkdir(parents=True, exist_ok=True)
@@ -83,7 +85,7 @@ def trim_audio_files(
 
         audio_filename = str(audio_filepath.stem) + ".wav"
 
-        logging.info(f"Saving audio {audio_filename}")
+        logger.info(f"Saving audio {audio_filename}")
         output_path = trimmed_audio_folder_path / audio_filename
         sf.write(output_path, shortened_audio_signal, sr, subtype="PCM_24")
 

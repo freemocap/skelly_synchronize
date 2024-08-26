@@ -1,6 +1,8 @@
 [flake8]
 
-per-file-ignores = ./skelly_synchronize/tests/*:S101, ./skelly_synchronize/__init__.py:F401
+per-file-ignores = 
+    ./skelly_synchronize/tests/*:S101
+    ./skelly_synchronize/__init__.py:F401
 
 max-line-length = 88
 

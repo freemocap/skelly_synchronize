@@ -11,6 +11,8 @@ tranposition_dictionary = {
     180.0: "transpose=cclock,transpose=cclock",
 }
 
+logger = logging.getLogger(__name__)
+
 
 def trim_single_video_deffcode(
     input_video_pathstring: str,

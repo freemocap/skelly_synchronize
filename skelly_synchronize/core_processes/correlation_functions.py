@@ -7,6 +7,8 @@ from scipy import signal
 
 from skelly_synchronize.system.paths_and_file_names import BRIGHTNESS_SUFFIX
 
+logger = logging.getLogger(__name__)
+
 
 def cross_correlate(audio1, audio2):
     """Take two audio files, synchronize them using cross correlation, and trim them to the same length.
@@ -27,7 +29,7 @@ def cross_correlate(audio1, audio2):
 def find_first_brightness_change(
     video_pathstring: str, brightness_ratio_threshold: float = 1000
 ) -> int:
-    logging.info(f"Detecting first brightness change in {video_pathstring}")
+    logger.info(f"Detecting first brightness change in {video_pathstring}")
     brightness_array = find_brightness_across_frames(video_pathstring)
     brightness_difference = np.diff(brightness_array, prepend=brightness_array[0])
     brightness_double_difference = np.diff(
@@ -41,12 +43,12 @@ def find_first_brightness_change(
     )
 
     if first_brightness_change == 0:
-        logging.info(
+        logger.info(
             "No brightness change exceeded threshold, defaulting to frame with fastest detected brightness change"
         )
         first_brightness_change = np.argmax(brightness_double_difference)
     else:
-        logging.info(
+        logger.info(
             f"First brightness change detected at frame number {first_brightness_change}"
         )
 
@@ -96,7 +98,7 @@ def find_cross_correlation_lags(
     The lag dict is normalized so that the lag of the latest video to start in time is 0, and all other lags are positive.
     """
     comparison_file_key = next(iter(audio_signal_dict))
-    logging.info(
+    logger.info(
         f"comparison file is: {comparison_file_key}, sample rate is: {sample_rate}"
     )
 
@@ -111,7 +113,7 @@ def find_cross_correlation_lags(
 
     normalized_lag_dict = normalize_lag_dictionary(lag_dictionary=lag_dict)
 
-    logging.info(
+    logger.info(
         f"original lag dict: {lag_dict} normalized lag dict: {normalized_lag_dict}"
     )
 
