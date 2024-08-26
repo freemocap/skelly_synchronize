@@ -29,7 +29,9 @@ def normalize_audio(audio_file: np.ndarray):
 
 
 def extract_audio_files(
-    video_info_dict: Dict[str, dict], audio_extension: AudioExtension, audio_folder_path: Path
+    video_info_dict: Dict[str, dict],
+    audio_extension: AudioExtension,
+    audio_folder_path: Path,
 ) -> dict:
     """Get a dictionary with audio files and information from the given video file paths."""
     audio_signal_dict = dict()
@@ -39,12 +41,14 @@ def extract_audio_files(
 
         extract_audio_from_video_ffmpeg(
             file_pathstring=video_dict["video pathstring"],
-            output_file_path=audio_file_path
+            output_file_path=audio_file_path,
         )
 
         if not audio_file_path.is_file():
             logging.error("Error loading audio file, verify video has audio track")
-            raise FileNotFoundError(f"Audio file not found: {audio_file_path}, ensure input video has audio")
+            raise FileNotFoundError(
+                f"Audio file not found: {audio_file_path}, ensure input video has audio"
+            )
 
         audio_signal, sample_rate = librosa.load(path=audio_file_path, sr=None)
 
@@ -61,7 +65,10 @@ def extract_audio_files(
 
 
 def trim_audio_files(
-    audio_folder_path: Path, lag_dictionary: dict, synced_video_length: float, audio_extension: AudioExtension = AudioExtension.WAV
+    audio_folder_path: Path,
+    lag_dictionary: dict,
+    synced_video_length: float,
+    audio_extension: AudioExtension = AudioExtension.WAV,
 ):
     logging.info("Trimming audio files to match synchronized video length")
 
