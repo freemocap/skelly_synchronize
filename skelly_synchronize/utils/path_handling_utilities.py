@@ -3,7 +3,7 @@ from pathlib import Path
 
 from skelly_synchronize.system.paths_and_file_names import SYNCED_VIDEO_PRECURSOR
 
-logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 def create_directory(parent_directory: Path, directory_name: str) -> Path:
@@ -13,9 +13,9 @@ def create_directory(parent_directory: Path, directory_name: str) -> Path:
 
     try:
         new_directory_path.mkdir(parents=True, exist_ok=True)
-        logging.info(f"Created directory: {new_directory_path}")
+        logger.info(f"Created directory: {new_directory_path}")
     except Exception as e:
-        logging.error(f"Error creating directory: {new_directory_path}. Exception: {e}")
+        logger.error(f"Error creating directory: {new_directory_path}. Exception: {e}")
         raise
 
     return new_directory_path

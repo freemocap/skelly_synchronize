@@ -1,8 +1,5 @@
-import logging
 import cv2
 from deffcode import Sourcer
-
-logging.basicConfig(level=logging.INFO)
 
 
 def check_if_video_has_reversed_metadata(video_pathstring: str):

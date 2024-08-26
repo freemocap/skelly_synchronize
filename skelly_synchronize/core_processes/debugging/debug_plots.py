@@ -12,6 +12,8 @@ from skelly_synchronize.system.paths_and_file_names import (
     TRIMMED_AUDIO_FOLDER_NAME,
 )
 
+logger = logging.getLogger(__name__)
+
 
 def create_brightness_debug_plots(
     raw_video_folder_path: Path, synchronized_video_folder_path: Path
@@ -25,7 +27,7 @@ def create_brightness_debug_plots(
         folder_path=synchronized_video_folder_path
     )
 
-    logging.info("Creating debug plots")
+    logger.info("Creating debug plots")
     plot_brightness_across_frames(
         raw_brightness_npys=list_of_raw_brightness_paths,
         trimmed_brightness_npys=list_of_trimmed_brightness_paths,
@@ -41,7 +43,7 @@ def create_audio_debug_plots(synchronized_video_folder_path: Path):
     list_of_raw_audio_paths = get_audio_paths_from_folder(raw_audio_folder_path)
     list_of_trimmed_audio_paths = get_audio_paths_from_folder(trimmed_audio_folder_path)
 
-    logging.info("Creating debug plots")
+    logger.info("Creating debug plots")
     plot_audio_waveforms(
         raw_audio_filepath_list=list_of_raw_audio_paths,
         trimmed_audio_filepath_list=list_of_trimmed_audio_paths,
@@ -90,7 +92,7 @@ def plot_brightness_across_frames(
 
         axs[1].plot(time, brightness_array, alpha=0.5)
 
-    logging.info(f"Saving debug plots to: {output_filepath}")
+    logger.info(f"Saving debug plots to: {output_filepath}")
     plt.savefig(output_filepath)
 
 
@@ -123,5 +125,5 @@ def plot_audio_waveforms(
 
         axs[1].plot(time, audio_signal, alpha=0.4)
 
-    logging.info(f"Saving debug plots to: {output_filepath}")
+    logger.info(f"Saving debug plots to: {output_filepath}")
     plt.savefig(output_filepath)
