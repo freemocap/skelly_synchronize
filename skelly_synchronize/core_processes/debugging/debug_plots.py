@@ -53,14 +53,14 @@ def create_audio_debug_plots(synchronized_video_folder_path: Path):
 
 def get_brightness_npys_from_folder(folder_path: Path) -> List[Path]:
     search_extension = "*" + BRIGHTNESS_SUFFIX + ".npy"
-    return Path(folder_path).glob(search_extension)
+    return list(Path(folder_path).glob(search_extension))
 
 
 def get_audio_paths_from_folder(
     folder_path: Path, file_extension: str = ".wav"
 ) -> List[Path]:
     search_extension = "*" + file_extension.lower()
-    return Path(folder_path).glob(search_extension)
+    return list(Path(folder_path).glob(search_extension))
 
 
 def plot_brightness_across_frames(
