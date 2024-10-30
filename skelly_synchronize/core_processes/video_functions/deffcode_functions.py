@@ -9,6 +9,7 @@ tranposition_dictionary = {
     -90.0: "transpose=clock",
     270.0: "transpose=clock",
     180.0: "transpose=cclock,transpose=cclock",
+    -180.0: "transpose=clock,transpose=clock",
 }
 
 logger = logging.getLogger(__name__)
