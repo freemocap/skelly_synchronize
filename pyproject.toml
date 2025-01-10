@@ -69,4 +69,4 @@ push            = true
 "skelly_synchronize/__init__.py" = ["{version}"]
 
 [project.scripts]
-skelly_synchronize = "skelly_synchronize.__main__:main"
+skelly_synchronize = "skelly_synchronize.__main__:run"
