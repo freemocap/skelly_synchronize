@@ -3,6 +3,10 @@ import logging
 import cv2
 from deffcode import FFdecoder, Sourcer
 
+from skelly_synchronize.core_processes.video_functions.ffmpeg_functions import (
+    check_for_ffmpeg,
+)
+
 tranposition_dictionary = {
     90.0: "transpose=cclock",
     -270.0: "transpose=cclock",
@@ -20,7 +24,14 @@ def trim_single_video_deffcode(
     frame_list: list,
     output_video_pathstring: str,
 ):
-    sourcer = Sourcer(input_video_pathstring).probe_stream()
+    try:
+        ffmpeg_location = check_for_ffmpeg()
+    except FileNotFoundError:
+        ffmpeg_location = ""
+
+    sourcer = Sourcer(
+        source=input_video_pathstring, custom_ffmpeg=ffmpeg_location
+    ).probe_stream()
     metadata_dictionary = sourcer.retrieve_metadata()
 
     if metadata_dictionary["source_video_orientation"] != 0:
@@ -37,6 +48,7 @@ def trim_single_video_deffcode(
     decoder = FFdecoder(
         str(input_video_pathstring),
         frame_format="bgr24",
+        custom_ffmpeg=ffmpeg_location,
         verbose=False,
         **ffparams,
     ).formulate()
