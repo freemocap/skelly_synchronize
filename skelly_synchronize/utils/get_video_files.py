@@ -23,7 +23,7 @@ def get_video_file_list(folder_path: Path) -> list:
 
     logger.info(f"{len(unique_video_filepath_list)} videos found in folder")
 
-    return unique_video_filepath_list
+    return sorted(unique_video_filepath_list, key=lambda p: str(p).lower())
 
 
 def get_unique_list(list: list) -> list:
