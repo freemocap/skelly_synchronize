@@ -32,9 +32,9 @@ def trim_single_video_deffcode(
     sourcer = Sourcer(
         source=input_video_pathstring, custom_ffmpeg=ffmpeg_location
     ).probe_stream()
-    metadata_dictionary = sourcer.retrieve_metadata()
+    metadata_dictionary = sourcer.retrieve_metadata(pretty_json=False)
 
-    if metadata_dictionary["source_video_orientation"] != 0:
+    if metadata_dictionary.get("source_video_orientation", 0) != 0:
         logging.info("Video has reversed metadata, changing FFmpeg transpose argument")
         ffparams = {
             "-ffprefixes": ["-noautorotate"],
