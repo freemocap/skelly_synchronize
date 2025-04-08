@@ -12,11 +12,14 @@ ffmpeg_string = "ffmpeg"
 ffprobe_string = "ffprobe"
 
 
-def check_for_ffmpeg():
-    if shutil.which(ffmpeg_string) is None:
+def check_for_ffmpeg() -> str:
+    ffmpeg_pathstring = shutil.which(ffmpeg_string)
+    if ffmpeg_pathstring is None:
         raise FileNotFoundError(
             "ffmpeg not found, please install ffmpeg and add it to your PATH"
         )
+
+    return ffmpeg_pathstring
 
 
 def check_for_ffprobe():
