@@ -58,13 +58,13 @@ def extract_audio_from_video_ffmpeg(
 
 def extract_video_duration_ffmpeg(file_pathstring: str):
     """Run a subprocess call to get the duration from a video file using ffmpeg"""
-
-    check_for_ffprobe()
     extract_duration_subprocess = subprocess.run(
         [
             ffprobe_string,
             "-v",
             "error",
+            "-select_streams",
+            "v:0",
             "-show_entries",
             "format=duration",
             "-of",
@@ -80,7 +80,18 @@ def extract_video_duration_ffmpeg(file_pathstring: str):
             f"extract duration subprocess failed for video {file_pathstring} with return code {extract_duration_subprocess.returncode}"
         )
 
-    video_duration = float(extract_duration_subprocess.stdout)
+    output = extract_duration_subprocess.stdout
+
+    try:
+        video_duration = float(output)
+    except ValueError:
+        split_str = str(output).split("/")
+        if len(split_str) == 2:
+            video_duration = float(int(split_str[0])) / float((split_str[1]))
+        else:
+            raise ValueError(
+                f"Unable to parse duration {output} from video {file_pathstring}"
+            )
 
     return video_duration
 
@@ -113,8 +124,17 @@ def extract_video_fps_ffmpeg(file_pathstring: str):
     # get the results, then remove the excess characters to get something like '####/###'
     cleaned_stdout = str(extract_fps_subprocess.stdout).split("'")[1].split("\\")[0]
     # separate out numerator and denominator to calculate the fraction
-    numerator, denominator = cleaned_stdout.split("/")
-    video_fps = float(int(numerator) / int(denominator))
+
+    try:
+        video_fps = float(cleaned_stdout)
+    except ValueError:
+        split_str = str(cleaned_stdout).split("/")
+        if len(split_str) == 2:
+            video_fps = float(int(split_str[0])) / float((split_str[1]))
+        else:
+            raise ValueError(
+                f"Unable to parse video fps {cleaned_stdout} from video {file_pathstring}"
+            )
 
     return video_fps
 
@@ -148,8 +168,22 @@ def extract_audio_sample_rate_ffmpeg(file_pathstring: str):
     cleaned_stdout = (
         str(extract_sample_rate_subprocess.stdout).split("'")[1].split("\\")[0]
     )
-    # convert to float
-    audio_sample_rate = float(cleaned_stdout)
+
+    if cleaned_stdout == "":
+        raise ValueError(
+            f"No audio file found for video {file_pathstring}, check that video has audio"
+        )
+
+    try:
+        audio_sample_rate = float(cleaned_stdout)
+    except ValueError:
+        split_str = str(cleaned_stdout).split("/")
+        if len(split_str) == 2:
+            audio_sample_rate = float(int(split_str[0])) / float((split_str[1]))
+        else:
+            raise ValueError(
+                f"Unable to parse audio sample rate {cleaned_stdout} from video {file_pathstring}"
+            )
 
     return audio_sample_rate
 
