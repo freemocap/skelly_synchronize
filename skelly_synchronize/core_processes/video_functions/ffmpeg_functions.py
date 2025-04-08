@@ -27,6 +27,22 @@ def check_for_ffprobe():
         raise FileNotFoundError(
             "ffprobe not found, please install ffmpeg and add it to your PATH"
         )
+    
+def parse_ffmpeg_output(output: str, file_pathstring: str) -> float:
+    cleaned_out = str(output).replace("b'", "").replace("'", "").replace("\\n", "").replace("\\", "")
+
+    try:
+        output_as_float = float(cleaned_out)
+    except ValueError:
+        split_str = str(cleaned_out).split("/")
+        if len(split_str) == 2:
+            output_as_float = float(int(split_str[0])) / float((split_str[1]))
+        else:
+            raise RuntimeError(
+                f"Unable to parse duration {output} from video {file_pathstring}"
+            )
+
+    return output_as_float
 
 
 def extract_audio_from_video_ffmpeg(
@@ -61,13 +77,13 @@ def extract_audio_from_video_ffmpeg(
 
 def extract_video_duration_ffmpeg(file_pathstring: str):
     """Run a subprocess call to get the duration from a video file using ffmpeg"""
-
-    check_for_ffprobe()
     extract_duration_subprocess = subprocess.run(
         [
             ffprobe_string,
             "-v",
             "error",
+            "-select_streams",
+            "v:0",
             "-show_entries",
             "format=duration",
             "-of",
@@ -83,7 +99,9 @@ def extract_video_duration_ffmpeg(file_pathstring: str):
             f"extract duration subprocess failed for video {file_pathstring} with return code {extract_duration_subprocess.returncode}"
         )
 
-    video_duration = float(extract_duration_subprocess.stdout)
+    video_duration = parse_ffmpeg_output(
+        str(extract_duration_subprocess.stdout), file_pathstring
+    )
 
     return video_duration
 
@@ -113,11 +131,7 @@ def extract_video_fps_ffmpeg(file_pathstring: str):
             f"extract fps subprocess failed for video {file_pathstring} with return code {extract_fps_subprocess.returncode}"
         )
 
-    # get the results, then remove the excess characters to get something like '####/###'
-    cleaned_stdout = str(extract_fps_subprocess.stdout).split("'")[1].split("\\")[0]
-    # separate out numerator and denominator to calculate the fraction
-    numerator, denominator = cleaned_stdout.split("/")
-    video_fps = float(int(numerator) / int(denominator))
+    video_fps = parse_ffmpeg_output(str(extract_fps_subprocess.stdout), file_pathstring)
 
     return video_fps
 
@@ -147,12 +161,12 @@ def extract_audio_sample_rate_ffmpeg(file_pathstring: str):
             f"extract sample rate subprocess failed for video {file_pathstring} with return code {extract_sample_rate_subprocess.returncode}"
         )
 
-    # get the result, then remove the excess characters to get something like '####'
-    cleaned_stdout = (
-        str(extract_sample_rate_subprocess.stdout).split("'")[1].split("\\")[0]
-    )
-    # convert to float
-    audio_sample_rate = float(cleaned_stdout)
+    if str(extract_sample_rate_subprocess.stdout) == "":
+        raise ValueError(
+            f"No audio file found for video {file_pathstring}, check that video has audio"
+        )
+
+    audio_sample_rate = parse_ffmpeg_output(str(extract_sample_rate_subprocess.stdout), file_pathstring)
 
     return audio_sample_rate
 
@@ -245,3 +259,12 @@ def attach_audio_to_video_ffmpeg(
         raise RuntimeError(
             f"Error occurred attaching audio to video {input_video_pathstring} with return code {attach_audio_subprocess.returncode}"
         )
+
+if __name__ == "__main__":
+    video_path = ""
+
+    print(f"video duration: {extract_video_duration_ffmpeg(video_path)}")
+
+    print(f"video fps: {extract_video_fps_ffmpeg(video_path)}")
+
+    print(f"audio sample rate: {extract_audio_sample_rate_ffmpeg(video_path)}")
