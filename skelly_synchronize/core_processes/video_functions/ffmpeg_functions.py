@@ -26,10 +26,12 @@ def check_for_ffprobe():
         )
     
 def parse_ffmpeg_output(output: str, file_pathstring: str) -> float:
+    cleaned_out = str(output).replace("b'", "").replace("'", "").replace("\\n", "").replace("\\", "")
+
     try:
-        output_as_float = float(output)
+        output_as_float = float(cleaned_out)
     except ValueError:
-        split_str = str(output).split("/")
+        split_str = str(cleaned_out).split("/")
         if len(split_str) == 2:
             output_as_float = float(int(split_str[0])) / float((split_str[1]))
         else:
@@ -126,11 +128,7 @@ def extract_video_fps_ffmpeg(file_pathstring: str):
             f"extract fps subprocess failed for video {file_pathstring} with return code {extract_fps_subprocess.returncode}"
         )
 
-    # get the results, then remove the excess characters to get something like '####/###'
-    cleaned_stdout = str(extract_fps_subprocess.stdout).split("'")[1].split("\\")[0]
-    # separate out numerator and denominator to calculate the fraction
-
-    video_fps = parse_ffmpeg_output(cleaned_stdout, file_pathstring)
+    video_fps = parse_ffmpeg_output(str(extract_fps_subprocess.stdout), file_pathstring)
 
     return video_fps
 
@@ -160,17 +158,12 @@ def extract_audio_sample_rate_ffmpeg(file_pathstring: str):
             f"extract sample rate subprocess failed for video {file_pathstring} with return code {extract_sample_rate_subprocess.returncode}"
         )
 
-    # get the result, then remove the excess characters to get something like '####'
-    cleaned_stdout = (
-        str(extract_sample_rate_subprocess.stdout).split("'")[1].split("\\")[0]
-    )
-
-    if cleaned_stdout == "":
+    if str(extract_sample_rate_subprocess.stdout) == "":
         raise ValueError(
             f"No audio file found for video {file_pathstring}, check that video has audio"
         )
 
-    audio_sample_rate = parse_ffmpeg_output(cleaned_stdout, file_pathstring)
+    audio_sample_rate = parse_ffmpeg_output(str(extract_sample_rate_subprocess.stdout), file_pathstring)
 
     return audio_sample_rate
 
@@ -263,3 +256,12 @@ def attach_audio_to_video_ffmpeg(
         raise RuntimeError(
             f"Error occurred attaching audio to video {input_video_pathstring} with return code {attach_audio_subprocess.returncode}"
         )
+
+if __name__ == "__main__":
+    video_path = ""
+
+    print(f"video duration: {extract_video_duration_ffmpeg(video_path)}")
+
+    print(f"video fps: {extract_video_fps_ffmpeg(video_path)}")
+
+    print(f"audio sample rate: {extract_audio_sample_rate_ffmpeg(video_path)}")
