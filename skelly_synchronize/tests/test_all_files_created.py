@@ -12,7 +12,7 @@ from skelly_synchronize.system.paths_and_file_names import (
 
 @pytest.mark.usefixtures("synchronized_video_folder_path")
 def test_synchronized_video_folder_exists(
-    synchronized_video_folder_path: Union[str, Path]
+    synchronized_video_folder_path: Union[str, Path],
 ):
     assert synchronized_video_folder_path.exists()
 
