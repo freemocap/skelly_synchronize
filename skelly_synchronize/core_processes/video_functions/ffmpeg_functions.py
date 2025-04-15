@@ -35,6 +35,8 @@ def parse_ffmpeg_output(output: str, file_pathstring: str) -> float:
         .replace("b'", "")
         .replace("'", "")
         .replace("\\n", "")
+        .replace("\\r", "")
+        .replace("\\t", "")
         .replace("\\", "")
     )
 
