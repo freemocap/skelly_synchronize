@@ -33,7 +33,7 @@ def parse_ffmpeg_output(output: str, file_pathstring: str) -> float:
 
     try:
         output_as_float = float(cleaned_out)
-    except ValueError:
+    except (ValueError, RuntimeError):
         split_str = str(cleaned_out).split("/")
         if len(split_str) == 2:
             output_as_float = float(int(split_str[0])) / float((split_str[1]))
