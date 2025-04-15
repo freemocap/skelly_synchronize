@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 def get_number_of_frames_of_videos_in_a_folder(
-    folder_path: Union[str, Path]
+    folder_path: Union[str, Path],
 ) -> List[int]:
     """
     Get the number of frames in the first video in a folder
