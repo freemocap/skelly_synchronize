@@ -27,9 +27,16 @@ def check_for_ffprobe():
         raise FileNotFoundError(
             "ffprobe not found, please install ffmpeg and add it to your PATH"
         )
-    
+
+
 def parse_ffmpeg_output(output: str, file_pathstring: str) -> float:
-    cleaned_out = str(output).replace("b'", "").replace("'", "").replace("\\n", "").replace("\\", "")
+    cleaned_out = (
+        str(output)
+        .replace("b'", "")
+        .replace("'", "")
+        .replace("\\n", "")
+        .replace("\\", "")
+    )
 
     try:
         output_as_float = float(cleaned_out)
@@ -166,7 +173,9 @@ def extract_audio_sample_rate_ffmpeg(file_pathstring: str):
             f"No audio file found for video {file_pathstring}, check that video has audio"
         )
 
-    audio_sample_rate = parse_ffmpeg_output(str(extract_sample_rate_subprocess.stdout), file_pathstring)
+    audio_sample_rate = parse_ffmpeg_output(
+        str(extract_sample_rate_subprocess.stdout), file_pathstring
+    )
 
     return audio_sample_rate
 
@@ -259,6 +268,7 @@ def attach_audio_to_video_ffmpeg(
         raise RuntimeError(
             f"Error occurred attaching audio to video {input_video_pathstring} with return code {attach_audio_subprocess.returncode}"
         )
+
 
 if __name__ == "__main__":
     video_path = ""
