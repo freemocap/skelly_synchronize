@@ -31,6 +31,7 @@ dependencies = [
 "deffcode==0.2.6",
 "toml==0.10.2",
 "matplotlib==3.8.2",
+"setuptools==75.8.0"
 ]
 
 requires-python = ">=3.9,<3.13"
