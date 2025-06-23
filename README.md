@@ -2,7 +2,7 @@
 
 Skelly Synchronize is a package for synchronizing videos post-recording, without the need for timestamps. There are multiple options for synchronizing videos, including cross correlation of the audio files and contrast checking of the video brightness. The videos will be synchronized so that they all start at the earliest shared time, and end at the latest shared time. 
 
-# Install and Run
+## Install and Run
 
 Skelly_synchronize can be installed through pip by running `pip install skelly_synchronize` in your terminal. Once it has installed, it can be run with the command `python -m skelly_synchronize`. 
 
@@ -13,15 +13,23 @@ Skelly_synchronize currently depends on FFmpeg, a command line tool that handles
 <img width="598" alt="Screen Shot 2023-10-10 at 9 51 11 AM" src="https://github.com/freemocap/skelly_synchronize/assets/24758117/2c34a076-90d9-4d8f-bd3a-5b4649586d8c">
 
 
-# Using Skelly Synchronize
+## Using Skelly Synchronize
 
 Once you have the GUI open, choose a folder of raw videos that you would like to synchronize. The videos must overlap in time to be able to be synchronized. The software currently works with `mp4`, `mkv`, `avi`, `mpeg`, and `mov` files. Once the folder of videos has been selected, you can press the button for the synchronization method you would like to run. The synchronized videos will be placed in a folder called "synchronized_videos" that will be in the same directory as the folder of raw videos.
 
-For **audio synchronization**, videos must all have audio tracks. Synchronization will work better if there are short, distinct sounds audible from each camera, for example a loud clap.
+### Synchronization Methods
+
+**Audio Cross Correlation** synchronizes by aligning the audio files of each video as closely as possible. Cross correlation is a mathematical technique used to find the amount of offset between different signals. In this case, Skelly Synchronize is using cross correlation to find the time difference between the audio tracks of the video files.
+
+**Brightness Contrast Detection** synchronizes by looking for a quick flash near the beginning of each video. This flash can be from a camera flash, turning on a light, or even opening curtains to a bright window. Skelly Synchronize looks for the first time in each video that the change in brightness (contrast) between subsequent frames passes a certain threshold, and then aligns the brightness change of each video. The brightness contrast threshold used can be set as a parameter in the GUI, and higher threshold values will require a more abrupt and brighter flash in the video. Synchronization will be best if all cameras see the flash at the same time, so methods like turning on a light will yield better synchronization than methods like opening curtains.
+
+### Video Requirements
+
+For **audio synchronization**, all videos must have audio tracks. Synchronization will work better if there are short, distinct sounds audible from each camera, for example a loud clap.
 
 For **brightness synchronization**, there must be a quick increase in brightness across all of the video files. This method requires a significant brightness change visible to all cameras, for example turning on a bright light or firing a flash visible to all cameras. The synchronization will be based off of the first brightness change in each video that crosses a threshold. You can set the brightness ratio threshold in the gui before synchronizing. The threshold takes into account both the brightness contrast compared to the preceding frame, and the rate of change of brightness contrast. It may take multiple tries with different brightness ratio thresholds to get proper synchronization, although the default should work in most cases.
 
-## Additional Files
+### Additional Files
 
 Skelly synchronize will create a variety of additional files during synchronization, depending on what synchronization method is used and what preprocessing steps are required for your videos.
 
