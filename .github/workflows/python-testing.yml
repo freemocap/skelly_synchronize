@@ -1,9 +1,10 @@
 name: Skelly Synchronize Tests
 
 on:
+  workflow_dispatch:
   pull_request:
     branches: [ main ]
-
+  
 
 jobs:
   build:
