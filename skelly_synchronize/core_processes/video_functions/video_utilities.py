@@ -108,8 +108,7 @@ def trim_single_video(
         )
 
         if video_handler == "ffmpeg":
-            logger.info(f"Saving video - Cam name: {video_dict['camera name']}")
-            logger.info(f"desired saving duration is: {minimum_duration} seconds")
+            logger.info(f"Saving video - Cam name: {video_dict['camera name']} - target duration: {minimum_duration} seconds")
             trim_single_video_ffmpeg(
                 input_video_pathstring=video_dict["video pathstring"],
                 start_time=start_time,
@@ -122,10 +121,7 @@ def trim_single_video(
                 f"Video Saved - Cam name: {video_dict['camera name']}, Video Duration in Seconds: {minimum_duration}"
             )
         if video_handler == "deffcode":
-            logger.info(f"Saving video - Cam name: {video_dict['camera name']}")
-            logger.info(
-                f"start frame is: {start_frame} desired saving duration is: {minimum_frames} frames"
-            )
+            logger.info(f"Saving video - Cam name: {video_dict['camera name']} - start frame: {start_frame} - target duration: {minimum_frames} frames")
             trim_single_video_deffcode(
                 input_video_pathstring=video_dict["video pathstring"],
                 frame_list=frame_list,
