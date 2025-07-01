@@ -1,4 +1,5 @@
 import logging
+import multiprocessing
 import tempfile
 import shutil
 from pathlib import Path
@@ -47,7 +48,6 @@ def create_video_info_dict(
 
     return video_info_dict
 
-
 def trim_videos(
     video_info_dict: Dict[str, dict],
     synchronized_folder_path: Path,
@@ -56,13 +56,46 @@ def trim_videos(
     video_handler: str = "deffcode",
 ) -> None:
     """Take a list of video files and a list of lags, and make all videos start and end at the same time."""
-
+    
+    if video_handler not in ["ffmpeg", "deffcode"]:
+        raise ValueError("video_handler must be either 'ffmpeg' or 'deffcode'")
+    
     minimum_duration = find_minimum_video_duration(
         video_info_dict=video_info_dict, lag_dict=lag_dict
     )
     minimum_frames = int(minimum_duration * fps)
 
-    for video_dict in video_info_dict.values():
+    max_processes = min(len(video_info_dict), multiprocessing.cpu_count()-1)
+
+    with multiprocessing.Pool(processes=max_processes) as pool:
+        pool.starmap(
+            trim_single_video,
+            [
+                (
+                    video_dict,
+                    synchronized_folder_path,
+                    minimum_duration,
+                    minimum_frames,
+                    lag_dict,
+                    fps,
+                    video_handler,
+                )
+                for video_dict in video_info_dict.values()
+            ],
+        )
+
+def trim_single_video(
+    video_dict: dict,
+    synchronized_folder_path: Path,
+    minimum_duration: float,
+    minimum_frames: int,
+    lag_dict: Dict[str, float],
+    fps: float,
+    video_handler: str = "deffcode",
+) -> None:
+    """Take a list of video files and a list of lags, and make all videos start and end at the same time."""
+
+    try:
         logger.debug(f"trimming video file {video_dict['camera name']}")
         synced_video_name = name_synced_video(
             raw_video_filename=video_dict["camera name"]
@@ -103,6 +136,12 @@ def trim_videos(
             logger.info(
                 f"Video Saved - Cam name: {video_dict['camera name']}, Video Duration in Frames: {minimum_frames}"
             )
+    except Exception as e:
+        logger.error(
+            f"Error trimming video {video_dict['camera name']}: {e}",
+            exc_info=True,
+        )
+        raise e
 
 
 def get_fps_list(video_info_dict: Dict[str, dict]):
