@@ -48,6 +48,7 @@ def create_video_info_dict(
 
     return video_info_dict
 
+
 def trim_videos(
     video_info_dict: Dict[str, dict],
     synchronized_folder_path: Path,
@@ -56,16 +57,16 @@ def trim_videos(
     video_handler: str = "deffcode",
 ) -> None:
     """Take a list of video files and a list of lags, and make all videos start and end at the same time."""
-    
+
     if video_handler not in ["ffmpeg", "deffcode"]:
         raise ValueError("video_handler must be either 'ffmpeg' or 'deffcode'")
-    
+
     minimum_duration = find_minimum_video_duration(
         video_info_dict=video_info_dict, lag_dict=lag_dict
     )
     minimum_frames = int(minimum_duration * fps)
 
-    max_processes = min(len(video_info_dict), multiprocessing.cpu_count()-1)
+    max_processes = min(len(video_info_dict), multiprocessing.cpu_count() - 1)
 
     with multiprocessing.Pool(processes=max_processes) as pool:
         pool.starmap(
@@ -83,6 +84,7 @@ def trim_videos(
                 for video_dict in video_info_dict.values()
             ],
         )
+
 
 def trim_single_video(
     video_dict: dict,
@@ -108,7 +110,9 @@ def trim_single_video(
         )
 
         if video_handler == "ffmpeg":
-            logger.info(f"Saving video - Cam name: {video_dict['camera name']} - target duration: {minimum_duration} seconds")
+            logger.info(
+                f"Saving video - Cam name: {video_dict['camera name']} - target duration: {minimum_duration} seconds"
+            )
             trim_single_video_ffmpeg(
                 input_video_pathstring=video_dict["video pathstring"],
                 start_time=start_time,
@@ -121,7 +125,9 @@ def trim_single_video(
                 f"Video Saved - Cam name: {video_dict['camera name']}, Video Duration in Seconds: {minimum_duration}"
             )
         if video_handler == "deffcode":
-            logger.info(f"Saving video - Cam name: {video_dict['camera name']} - start frame: {start_frame} - target duration: {minimum_frames} frames")
+            logger.info(
+                f"Saving video - Cam name: {video_dict['camera name']} - start frame: {start_frame} - target duration: {minimum_frames} frames"
+            )
             trim_single_video_deffcode(
                 input_video_pathstring=video_dict["video pathstring"],
                 frame_list=frame_list,
