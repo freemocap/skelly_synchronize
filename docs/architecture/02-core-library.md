@@ -1,4 +1,4 @@
-# Core Library Design (`skelly_sync_core`)
+# Core Library Design (`skelly_synchronize.core`)
 
 ## Goals
 

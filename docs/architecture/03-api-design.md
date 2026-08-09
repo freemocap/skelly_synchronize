@@ -1,4 +1,4 @@
-# FastAPI Service Design (`skelly_sync_api`)
+# FastAPI Service Design (`skelly_synchronize.api`)
 
 ## Deployment model
 
@@ -20,7 +20,7 @@ class Job(BaseModel):
     progress_message: str | None = None
     created_at: datetime
     updated_at: datetime
-    request: SyncRequest             # reused directly from skelly_sync_core
+    request: SyncRequest             # reused directly from skelly_synchronize.core
     result: SyncResult | None = None
     error: str | None = None
 ```
@@ -47,7 +47,7 @@ For each job, `api` creates a `multiprocessing.Manager().dict()` and passes a ca
 
 ## Request/response schemas
 
-`SyncRequest`, `Job`, and `SyncResult` are the `core` Pydantic models used directly as FastAPI request/response schemas — no separate duplicate schema layer. `skelly_sync_api/schemas.py` only defines API-specific wrapper types that have no equivalent in `core`, such as `JobCreateResponse`.
+`SyncRequest`, `Job`, and `SyncResult` are the `core` Pydantic models used directly as FastAPI request/response schemas — no separate duplicate schema layer. `skelly_synchronize/api/schemas.py` only defines API-specific wrapper types that have no equivalent in `core`, such as `JobCreateResponse`.
 
 ## Error handling
 

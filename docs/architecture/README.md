@@ -16,8 +16,8 @@ This directory describes the **target** architecture for the `skelly_synchronize
 |---|---|
 | [00-known-issues.md](00-known-issues.md) | Numbered `KI-##` list of current bugs/smells and where each is resolved — the checklist nothing should silently reproduce. |
 | [01-package-layout.md](01-package-layout.md) | Target repo/module structure, monorepo layout, packaging and build decisions. |
-| [02-core-library.md](02-core-library.md) | `skelly_sync_core` design: typed data models, `VideoBackend` interface, pipeline abstraction, concurrency model. |
-| [03-api-design.md](03-api-design.md) | `skelly_sync_api` design: FastAPI endpoints, schemas, job model, progress bridge. |
+| [02-core-library.md](02-core-library.md) | `skelly_synchronize.core` design: typed data models, `VideoBackend` interface, pipeline abstraction, concurrency model. |
+| [03-api-design.md](03-api-design.md) | `skelly_synchronize.api` design: FastAPI endpoints, schemas, job model, progress bridge. |
 | [04-frontend.md](04-frontend.md) | React app: screens, API client, state management approach. |
 | [05-testing-strategy.md](05-testing-strategy.md) | Test pyramid across `core`/`api`/frontend, fixture redesign, CI plan. |
 
@@ -31,16 +31,16 @@ Read in the numbered order above — each later doc assumes the decisions made i
         └─────┬──────┘
               │ HTTP (polling)
         ┌─────▼──────┐
-        │    api     │  FastAPI (skelly_sync_api) — job orchestration, HTTP boundary
+        │    api     │  FastAPI (skelly_synchronize.api) — job orchestration, HTTP boundary
         └─────┬──────┘
               │ Python calls
         ┌─────▼──────┐       ┌────────────┐
         │    core    │◄──────┤    cli     │  both depend only on core
-        │(skelly_sync_core)  └────────────┘
+        │(skelly_synchronize.core)  └──────┘
         └────────────┘
 ```
 
-`core` has no knowledge of `api` or `frontend`. `api` and `cli` are both thin consumers of `core`, so the sync engine is usable standalone (scriptable, embeddable in other tools) independent of whether the API/frontend exist at all. See [01-package-layout.md](01-package-layout.md) for the full package tree.
+`core` has no knowledge of `api` or `frontend`. `api` and `cli` are both thin consumers of `core`, so the sync engine is usable standalone (scriptable, embeddable elsewhere within this same package) independent of whether the API/frontend exist at all. `core`, `api`, and `cli` all live in one PyPI distribution (`skelly_synchronize`), with `api`'s dependencies behind an optional extra — see [01-package-layout.md](01-package-layout.md) for the full package tree and the rationale for keeping this as one package for now.
 
 ## Non-goals
 
@@ -55,7 +55,7 @@ The rewrite proceeds in phases. **Each phase ends with the tool still fully usab
 
 1. **Phase 0 — scaffold `core`.** Stand up the new package layout, typed models, and the `VideoBackend` protocol with only the `FfmpegBackend` implementation. Port logic incrementally with unit tests. Keep the *old* `skelly_synchronize.py` entry points working by delegating internally to the new pipeline where practical, so the existing PySide6 GUI keeps functioning throughout this phase.
 2. **Phase 1 — finish the `core` rewrite.** Complete the pipeline abstraction, the brightness path, the `DeffcodeBackend`, the audio subsystem, and debug artifacts. The old GUI now runs entirely against the new `core` library — this phase proves `core`'s public surface is sufficient before any API work begins.
-3. **Phase 2 — FastAPI layer.** Build `skelly_sync_api` wrapping the now-finished `core`, starting with an in-memory job store. Test manually via the FastAPI-generated `/docs` UI — no frontend exists yet.
+3. **Phase 2 — FastAPI layer.** Build `skelly_synchronize.api` wrapping the now-finished `core`, starting with an in-memory job store. Test manually via the FastAPI-generated `/docs` UI — no frontend exists yet.
 4. **Phase 3 — React frontend.** Build the frontend against the FastAPI layer from Phase 2. Once it reaches feature parity with the old GUI, delete the PySide6 GUI package entirely.
 5. **Phase 4 — cleanup.** Remove any remaining old dict-based code paths, finalize packaging/CI per [01-package-layout.md](01-package-layout.md) and [05-testing-strategy.md](05-testing-strategy.md), update the top-level README, and tag a release.
 
@@ -64,8 +64,8 @@ The rewrite proceeds in phases. **Each phase ends with the tool still fully usab
 | Decision | Choice | Rationale (detail in linked doc) |
 |---|---|---|
 | Job storage | In-memory dict + lock, no SQLite | Jobs are ephemeral; durable output is the files on disk. [03-api-design.md](03-api-design.md) |
-| `core` as a separate installable package | Yes — `skelly_sync_core` | Reusable independent of FastAPI/PySide6. [01-package-layout.md](01-package-layout.md) |
-| Repo structure | Monorepo: `packages/core`, `packages/api`, `cli/`, `frontend/` | Single release cadence, no cross-repo coordination overhead. [01-package-layout.md](01-package-layout.md) |
+| `core` as a separate installable package | No, for now — single `skelly_synchronize` distribution with `core`/`api`/`cli` as subpackages, `api` deps behind an optional extra | No consumer outside this repo needs to import `core` in-process yet; split out later if that changes. [01-package-layout.md](01-package-layout.md) |
+| Repo structure | Monorepo: one Python package (`core`, `api`, `cli` subpackages) + `frontend/` | Single release cadence, no cross-repo or cross-package coordination overhead. [01-package-layout.md](01-package-layout.md) |
 | Frontend location | Same repo, `frontend/` | See above. [01-package-layout.md](01-package-layout.md) |
 | Progress reporting | `core` exposes a generic callback hook; `api` supplies the actual mechanism | Keeps `core` deployment-agnostic. [02-core-library.md](02-core-library.md), [03-api-design.md](03-api-design.md) |
 | Typed data model approach | Pydantic throughout `core`/`api` (raw audio arrays excluded) | Avoids a dataclass↔Pydantic translation layer since FastAPI already requires Pydantic. [02-core-library.md](02-core-library.md) |

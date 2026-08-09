@@ -10,61 +10,58 @@ This document defines the target repo/module structure and packaging decisions f
 
 ## Target tree
 
+One Python package, `skelly_synchronize`, published as a single PyPI distribution. `core` and `api` are subpackages within it, not separate distributions — see "Single package, `api` as an optional extra" below for why.
+
 ```
 skelly_synchronize/
-├── packages/
-│   ├── core/                        # skelly_sync_core — installable, zero FastAPI/PySide6 deps
-│   │   ├── pyproject.toml
-│   │   └── skelly_sync_core/
-│   │       ├── models.py            # Pydantic data models (VideoInfo, AudioInfo, LagResult, ...)
-│   │       ├── backends/
-│   │       │   ├── base.py          # VideoBackend Protocol
-│   │       │   ├── ffmpeg.py        # FfmpegBackend
-│   │       │   └── deffcode.py      # DeffcodeBackend
-│   │       ├── pipeline/
-│   │       │   ├── stages.py        # PipelineStage implementations
-│   │       │   └── runner.py        # SyncPipeline
-│   │       ├── audio.py
-│   │       ├── brightness.py
-│   │       ├── debug.py
-│   │       ├── config.py            # all constants: folder/file names, naming conventions, defaults
-│   │       └── logging_setup.py     # opt-in only; never called from inside core itself
-│   └── api/                         # skelly_sync_api — FastAPI app, depends on core
-│       ├── pyproject.toml
-│       └── skelly_sync_api/
-│           ├── main.py
-│           ├── routers/
-│           ├── jobs.py              # in-memory job store + per-job process orchestration
-│           └── schemas.py           # API-only wrapper models (e.g. JobCreateResponse)
+├── pyproject.toml                   # single package; "api" extra pulls in fastapi/uvicorn
+├── skelly_synchronize/
+│   ├── core/                        # sync engine — zero FastAPI/PySide6 deps
+│   │   ├── models.py                # Pydantic data models (VideoInfo, AudioInfo, LagResult, ...)
+│   │   ├── backends/
+│   │   │   ├── base.py              # VideoBackend Protocol
+│   │   │   ├── ffmpeg.py            # FfmpegBackend
+│   │   │   └── deffcode.py          # DeffcodeBackend
+│   │   ├── pipeline/
+│   │   │   ├── stages.py            # PipelineStage implementations
+│   │   │   └── runner.py            # SyncPipeline
+│   │   ├── audio.py
+│   │   ├── brightness.py
+│   │   ├── debug.py
+│   │   ├── config.py                # all constants: folder/file names, naming conventions, defaults
+│   │   └── logging_setup.py         # opt-in only; never called from inside core itself
+│   ├── api/                         # FastAPI app — only importable when the "api" extra is installed
+│   │   ├── main.py
+│   │   ├── routers/
+│   │   ├── jobs.py                  # in-memory job store + per-job process orchestration
+│   │   └── schemas.py               # API-only wrapper models (e.g. JobCreateResponse)
+│   └── cli/                         # thin argparse/typer wrapper over core, replaces __main__.py
 ├── frontend/                        # React app (Vite + TypeScript), talks to api/ over HTTP only
-├── cli/                             # thin argparse/typer wrapper over core, replaces __main__.py
-├── docs/
-│   └── architecture/
-└── pyproject.toml                   # root workspace config
+└── docs/
+    └── architecture/
 ```
 
 ## Dependency direction
 
 - `core` has zero knowledge of FastAPI, uvicorn, or PySide6. It only depends on the algorithm libraries it actually needs (numpy, scipy, librosa, opencv, deffcode, pydantic).
-- `api` depends on `core` as a regular dependency.
+- `api` depends on `core` (an internal import within the same package — no separate dependency declaration needed).
 - `cli` depends only on `core` (not `api`).
 - `frontend` depends on nothing Python — it talks to `api` over HTTP only.
 
-## Core as its own installable package
+## Single package, `api` as an optional extra
 
-`core` ships as its own installable package, `skelly_sync_core`, distributed independently (e.g. on PyPI) so it can be reused by other tools — for example, embedding sync into a larger FreeMoCap pipeline — without pulling in FastAPI, uvicorn, or pydantic-settings as transitive dependencies. `api` declares `skelly_sync_core` as a normal dependency, not a path-based extra of the same package; keeping it as an "extra" of one combined package would force both to share one release cadence and one dependency footprint.
+`core` and `api` ship in one PyPI distribution (`skelly_synchronize`), not as two separately published packages. `fastapi`/`uvicorn` are declared under an optional extra — `pip install skelly_synchronize[api]` — so a consumer who only wants the sync engine (`pip install skelly_synchronize`) doesn't pull in the web-server dependencies, without requiring a second PyPI distribution, a second version number, or a second release process.
 
-Local development across the monorepo uses a workspace-style setup with path dependencies for `api` → `core` and `cli` → `core`, so changes in `core` are picked up immediately by the other packages during development.
+This intentionally defers the earlier idea of publishing `core` as its own separately-versioned package. That split only pays for itself once something *outside this repo* — e.g. the main FreeMoCap pipeline — actually wants to `import` the sync engine in-process instead of calling the API over HTTP. There's no such consumer today, so the extra release/versioning overhead of a second distribution isn't justified yet. If that need materializes later, splitting `core` out into its own package is a mechanical refactor at that point — the module boundary already exists internally (see "Dependency direction" above) — not a redesign.
 
 ## Build backend
 
-Recommend switching from `flit_core` to **`hatchling`**, since it has better support for multi-package monorepo/workspace layouts. Keep the decision under review — if `hatchling` introduces friction, revisit, but there's no reason to default back to `flit_core`'s single-package assumptions once the repo has three installable Python packages.
+`flit_core` remains sufficient for a single-package distribution with an optional extra — no need to move to a workspace-oriented build backend now that there's only one package to build. Revisit only if the repo later grows back into multiple installable packages (see above).
 
 ## Naming
 
-- `skelly_sync_core` and `skelly_sync_api` for the two installable packages, avoiding a name clash with the existing `skelly_synchronize` PyPI package.
-- `skelly_synchronize` continues as the umbrella/meta name for the project and the CLI entry point for continuity with existing users.
-- Console scripts: `skelly-sync` (CLI, replaces `python -m skelly_synchronize`/`__main__.py`) and `skelly-sync-api` (launches the FastAPI server, wraps `uvicorn`).
+- One PyPI distribution: `skelly_synchronize`, continuing the existing published name.
+- Console scripts: `skelly-sync` (CLI, replaces `python -m skelly_synchronize`/`__main__.py`) and `skelly-sync-api` (launches the FastAPI server via `uvicorn`; only functional if the `[api]` extra is installed).
 
 ## Constants and configuration (resolves KI-15)
 
