@@ -6,7 +6,7 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "skelly_synchronize"
-description = "Basic template of a python repository"
+description = "Synchronize multi-camera video recordings post-recording, without needing timestamps."
 readme = "README.md"
 authors = [{ name = "skelly_synchronize", email = "info@freemocap.org" }]
 license = { file = "LICENSE" }
@@ -17,14 +17,14 @@ classifiers = [
     "Programming Language :: Python :: 3",
 ] #additional classifiers can be found here: https://pypi.org/classifiers/
 
-keywords = ["basic",
-            "template",
-            "python",
-            "repository"] #change these to your project keywords
+keywords = ["video",
+            "synchronization",
+            "motion-capture",
+            "freemocap"]
 
 dependencies = [
+"pydantic>=2.0",
 "librosa==0.10.1",
-"PySide6>=6.6, <6.8",
 "numpy==1.26.2",
 "scipy==1.11.4",
 "opencv-contrib-python==4.8.*",
@@ -56,7 +56,6 @@ Homepage = "https://freemocap.org"
 Documentation = "https://freemocap.github.io/skelly_synchronize/"
 Github = "https://github.com/freemocap/skelly_synchronize"
 
-
 [tool.bumpver] #bump the version by entering `bumpver update` in the terminal
 current_version = "v2025.04.1037"
 version_pattern = "vYYYY.0M.BUILD[-TAG]"
@@ -68,6 +67,3 @@ push            = true
 [tool.bumpver.file_patterns]
 "pyproject.toml" = ["{version}"]
 "skelly_synchronize/__init__.py" = ["{version}"]
-
-[project.scripts]
-skelly_synchronize = "skelly_synchronize.__main__:run"
