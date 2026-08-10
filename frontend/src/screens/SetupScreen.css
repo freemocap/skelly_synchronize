@@ -29,6 +29,21 @@
   color: var(--text);
 }
 
+.setup-screen .path-input-row {
+  display: flex;
+  gap: 8px;
+}
+
+.setup-screen .path-input-row input[type="text"] {
+  flex: 1;
+}
+
+.setup-screen .path-input-row button {
+  align-self: auto;
+  padding: 8px 14px;
+  white-space: nowrap;
+}
+
 .setup-screen button {
   align-self: flex-start;
   padding: 10px 20px;

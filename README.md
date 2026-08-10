@@ -21,7 +21,15 @@ npm run dev
 
 Open the URL Vite prints (typically `http://localhost:5173`) in your browser. See [`frontend/README.md`](frontend/README.md) for details.
 
+A standalone macOS desktop app (packaged with Tauri, bundling the API so you don't
+need to run it separately) is also in progress — see [CONTRIBUTING.md](CONTRIBUTING.md#desktop-app-tauri).
+
 Skelly_synchronize currently depends on FFmpeg, a command line tool that handles the video files. If you do not have FFmpeg downloaded, you will need to install it separately. You can download FFmpeg here: https://ffmpeg.org/download.html
+
+## Contributing
+
+For dev environment setup (via [uv](https://docs.astral.sh/uv/)), running tests, and
+building/testing the desktop app, see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Using Skelly Synchronize
 

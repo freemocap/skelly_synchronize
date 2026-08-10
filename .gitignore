@@ -31,6 +31,11 @@ MANIFEST
 #  before PyInstaller builds the exe, so as to inject date/other infos into it.
 *.manifest
 *.spec
+!packaging/pyinstaller/*.spec
+
+# Tauri desktop shell
+src-tauri/target/
+src-tauri/binaries/
 
 # Installer logs
 pip-log.txt

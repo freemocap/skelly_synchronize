@@ -19,12 +19,12 @@ Design for the React app that replaces the PySide6 desktop GUI. Kept deliberatel
 
 Replaces today's GUI, which only exposes 2 of the several parameters `core` actually supports. The new setup screen exposes all of them:
 
-- Raw video folder path — a plain text input for an absolute path, not a browser file picker. (Browsers cannot reliably expose real filesystem *paths* from a picker due to the File System Access API's security model, and since the API and browser run on the same machine here, a plain path field is simpler and fully sufficient — documented explicitly as the reason, not an oversight.)
+- Raw video folder path — a text input for an absolute path, plus a "Browse…" button that opens a native OS folder picker via the Tauri shell (`@tauri-apps/plugin-dialog`, see [06-tauri-desktop.md](06-tauri-desktop.md)), which returns a real absolute path directly. (Earlier versions of this doc specified a plain text-only field, reasoning that a browser-only frontend cannot reliably obtain real filesystem *paths* from a picker due to the File System Access API's security model — that constraint no longer applies now that the frontend only runs inside the Tauri shell, which does have real filesystem access.)
 - Sync method selector (audio / brightness).
 - Backend selector (ffmpeg / deffcode) — newly exposed; today's GUI has no way to choose this.
 - Brightness ratio threshold field — shown only when brightness is selected (matches today's one exposed parameter).
 - Debug-artifacts toggle — newly exposed.
-- Optional custom output folder path — newly exposed (`core` already supports overriding `synchronized_video_folder_path`; the GUI never surfaced it).
+- Optional custom output folder path — newly exposed (`core` already supports overriding `synchronized_video_folder_path`; the GUI never surfaced it). Same text input + native-picker "Browse…" pattern as the raw folder path field above.
 - "Start sync" button — `POST /jobs`, then navigates to the Job Progress screen with the returned `job_id`.
 
 ### Job Progress screen
@@ -54,9 +54,7 @@ Minimal, plain CSS (or CSS Modules) — no heavyweight design system or componen
 
 ## Dev / run model
 
-**v1**: two processes — `skelly-sync-api` (FastAPI/uvicorn on `127.0.0.1:8000`) and `npm run dev` (Vite dev server, proxying API calls to the FastAPI port). The user runs both and opens the Vite dev server URL in a browser.
-
-Bundling the frontend as static files served directly by FastAPI (a single-process app, closer to the original desktop-app feel) is deferred to a later polish phase, once the API/frontend split has proven itself — not attempted in the initial rewrite.
+Superseded by [06-tauri-desktop.md](06-tauri-desktop.md): the frontend runs only inside a Tauri desktop shell, which manages the API as a sidecar process, rather than a developer/user starting `skelly-sync-api` and a Vite dev server by hand and opening a browser tab. `npm run tauri dev` (dev) / `npm run tauri build` (release) replace the old two-process model.
 
 ## Location
 
@@ -64,4 +62,4 @@ Lives in-repo under `frontend/`, per the monorepo decision in [01-package-layout
 
 ## Known issues resolved by this document
 
-KI-22 (blocking, feedback-less sync UI replaced by an async progress screen with error display), and the parameter-exposure gap noted in the current GUI (only 2 of several `core` parameters were ever surfaced).
+KI-22 (blocking, feedback-less sync UI replaced by an async progress screen with error display), and the parameter-exposure gap noted in the current GUI (only 2 of several `core` parameters were ever surfaced). The folder-picker limitation noted earlier in this document is now actually resolved rather than merely accepted, once the frontend runs inside the Tauri shell — see [06-tauri-desktop.md](06-tauri-desktop.md).

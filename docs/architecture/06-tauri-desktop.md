@@ -1,0 +1,71 @@
+# Tauri Desktop Packaging
+
+## Purpose
+
+Design for wrapping the React frontend ([04-frontend.md](04-frontend.md)) and the FastAPI server ([03-api-design.md](03-api-design.md)) into a single distributable desktop app, using [Tauri](https://tauri.app/) 2 as the native shell. This replaces the "run two processes, open a browser tab" dev/run model with one packaged app a user can launch directly, and gives the frontend a real native OS folder picker in the process.
+
+## Tech choices
+
+- **Tauri 2** (Rust shell + the OS's system webview — no bundled Chromium/Node runtime, unlike Electron).
+- **`tauri-plugin-dialog`** for the native folder-picker dialog.
+- **`tauri-plugin-shell`** for spawning and managing the API as a child process (a "sidecar").
+- **PyInstaller** to freeze the Python API into a standalone binary — see "Packaging" below.
+
+## Process architecture
+
+The Tauri Rust shell owns the API process's lifecycle instead of a developer/user starting it by hand:
+
+- On app startup, Rust spawns the API. Release builds use the bundled PyInstaller sidecar binary via `tauri-plugin-shell`'s `Command::sidecar`; dev builds spawn `skelly-sync-api` directly from `PATH` (relying on the activated Python venv), selected via `cfg!(debug_assertions)`. This avoids needing a frozen binary on every dev iteration.
+- The API keeps binding `127.0.0.1:8000`, unchanged from today. **Documented v1 simplification**: no dynamic port negotiation between Rust and the API — if port 8000 is already in use on a user's machine, startup fails. Revisit with a random free port passed to the sidecar's args and forwarded to the frontend via Tauri IPC if this becomes a real problem.
+- The frontend polls `GET /health` on mount with retry/backoff and shows a "Starting sync engine…" loading state until it responds, before rendering the Setup screen. This reuses the same polling pattern already established by `useJobPolling` ([04-frontend.md](04-frontend.md)) rather than introducing a separate Rust↔JS readiness signal.
+- Shutdown: Rust kills the child process handle when the app exits. A hard kill is acceptable here — the job store is in-memory/ephemeral by design ([03-api-design.md](03-api-design.md)), and each sync job already runs in its own isolated `multiprocessing.Process` ([`skelly_synchronize/api/jobs.py`](../../skelly_synchronize/api/jobs.py)), so there's no shared state to corrupt on an abrupt exit.
+
+## Folder selection
+
+`SetupScreen` gets a "Browse…" button using `@tauri-apps/plugin-dialog`'s `open({ directory: true })`, which returns a real OS-native absolute path directly. The text field stays editable alongside the button, for manual entry/power users.
+
+This resolves the file-picker limitation [04-frontend.md](04-frontend.md) previously documented as an accepted limitation of running in a plain browser (browsers cannot reliably expose real filesystem paths from a picker, per the File System Access API's security model) — that constraint doesn't apply once the frontend only runs inside the Tauri shell. It also retires an earlier idea of adding a server-side `/browse` endpoint that would let the frontend walk the filesystem itself; unnecessary once a native dialog is available.
+
+## Packaging (PyInstaller sidecar)
+
+A new `packaging/pyinstaller/skelly-sync-api.spec` freezes the `skelly-sync-api` entry point — and its heavy dependencies (numpy, scipy, librosa, opencv-contrib, deffcode) — into a standalone binary. The output is renamed per Tauri's sidecar convention (`skelly-sync-api-<target-triple>`, e.g. `skelly-sync-api-aarch64-apple-darwin`) and placed in `src-tauri/binaries/`, referenced by `tauri.conf.json`'s `bundle.externalBin` so `tauri build` bundles it into the app.
+
+**Primary technical risk**: the job execution model in `skelly_synchronize/api/jobs.py` depends on `multiprocessing.Process` and `multiprocessing.Manager()` for per-job isolation and progress bridging. Frozen executables have well-known multiprocessing wrinkles — the entry point needs `multiprocessing.freeze_support()` guarding, and spawn-method behavior differs under PyInstaller's onefile vs onedir modes (worse on Windows, but not risk-free on macOS either). **Recommendation**: freeze the sidecar and run one real sync job through it as an early spike, before investing in the rest of the Tauri shell — this is the piece most likely to need rework if it doesn't work cleanly on the first attempt.
+
+**FFmpeg** stays an external system dependency for v1 — it is not bundled into the app or the sidecar binary. This is consistent with the project's existing FFmpeg requirement (see the root `README.md`) and is a deliberate, documented v1 limitation in the same style as other accepted-for-now decisions in this rewrite (e.g. KI-11, KI-16 in [00-known-issues.md](00-known-issues.md)). Revisit bundling a static ffmpeg binary as an app resource in a later pass if the external-dependency requirement proves to be a real adoption blocker.
+
+## Repo layout addition
+
+```
+src-tauri/
+├── Cargo.toml
+├── tauri.conf.json
+├── capabilities/          # Tauri 2 permission grants (dialog, shell/sidecar)
+├── icons/
+├── binaries/               # frozen sidecar binaries land here; git-ignored, built via packaging/pyinstaller
+└── src/
+    ├── main.rs
+    └── lib.rs               # app setup: spawn/track/kill the API child process
+packaging/
+└── pyinstaller/
+    └── skelly-sync-api.spec
+```
+
+`frontend/package.json` gains `@tauri-apps/cli` (dev dependency, provides `npm run tauri ...`), plus runtime dependencies `@tauri-apps/api`, `@tauri-apps/plugin-dialog`, `@tauri-apps/plugin-shell`.
+
+## Dev vs release workflow
+
+- **Dev**: `npm run tauri dev` (via `@tauri-apps/cli`). Tauri's `devUrl` points at the Vite dev server; `beforeDevCommand` runs `npm run dev` inside `frontend/`. Rust spawns `skelly-sync-api` from the activated venv's `PATH` rather than a frozen binary, so dev iteration doesn't require re-running PyInstaller.
+- **Release**: `npm run tauri build`. `beforeBuildCommand` runs `npm run build` inside `frontend/`. The PyInstaller sidecar must be frozen first — a separate, manual step for now (not yet wired into `tauri build` itself) — and placed in `src-tauri/binaries/` before `tauri build` bundles it via `externalBin`. Automating this handoff (e.g. a `beforeBundleCommand` or a wrapper script) is a reasonable follow-up once the manual flow is proven to work.
+
+This retires the "two-process, opened in a plain browser tab" dev/run model documented in [04-frontend.md](04-frontend.md) — that model is superseded by `tauri dev`.
+
+## Platform scope
+
+Initial target is macOS, the primary dev machine. Windows and Linux each need their own PyInstaller-frozen sidecar binary (built on/for that target triple) and their own bundle testing — this is not assumed to come "for free" from getting macOS working, and is called out explicitly so it doesn't silently become a gap when the app is eventually shared with users on other platforms.
+
+## Known issues / limitations resolved by this document
+
+- Resolves the file-picker limitation noted in [04-frontend.md](04-frontend.md) (previously an accepted limitation of the browser-only frontend; now actually fixed via a native dialog).
+- Supersedes the two-process browser dev/run model in [04-frontend.md](04-frontend.md).
+- No `KI-##` item from [00-known-issues.md](00-known-issues.md) maps directly to this doc — all of those describe the pre-rewrite codebase; desktop packaging is new scope introduced after the rewrite's original plan.

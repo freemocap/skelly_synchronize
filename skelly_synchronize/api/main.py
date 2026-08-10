@@ -1,4 +1,5 @@
 import logging
+import multiprocessing
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -42,6 +43,8 @@ def handle_skelly_sync_error(request: Request, exc: SkellySyncError) -> JSONResp
 
 
 def run() -> None:
+    multiprocessing.freeze_support()
+
     import uvicorn
 
     configure_logging(level=logging.INFO)

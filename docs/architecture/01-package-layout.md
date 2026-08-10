@@ -37,6 +37,9 @@ skelly_synchronize/
 │   │   └── schemas.py               # API-only wrapper models (e.g. JobCreateResponse)
 │   └── cli/                         # thin argparse/typer wrapper over core, replaces __main__.py
 ├── frontend/                        # React app (Vite + TypeScript), talks to api/ over HTTP only
+├── src-tauri/                       # Tauri desktop shell — spawns/manages api as a sidecar; see 06-tauri-desktop.md
+├── packaging/
+│   └── pyinstaller/                 # PyInstaller spec(s) freezing api into the Tauri sidecar binary
 └── docs/
     └── architecture/
 ```
@@ -46,7 +49,7 @@ skelly_synchronize/
 - `core` has zero knowledge of FastAPI, uvicorn, or PySide6. It only depends on the algorithm libraries it actually needs (numpy, scipy, librosa, opencv, deffcode, pydantic).
 - `api` depends on `core` (an internal import within the same package — no separate dependency declaration needed).
 - `cli` depends only on `core` (not `api`).
-- `frontend` depends on nothing Python — it talks to `api` over HTTP only.
+- `frontend` depends on nothing Python — it talks to `api` over HTTP only. In the packaged desktop app, the Tauri shell (`src-tauri/`) starts and manages `api` as a sidecar process instead of a developer/user starting it by hand — see [06-tauri-desktop.md](06-tauri-desktop.md). `frontend`'s own dependencies gain `@tauri-apps/cli`, `@tauri-apps/api`, `@tauri-apps/plugin-dialog`, and `@tauri-apps/plugin-shell`.
 
 ## Single package, `api` as an optional extra
 

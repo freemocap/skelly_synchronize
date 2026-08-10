@@ -43,6 +43,9 @@ api = [
     "fastapi>=0.110,<1",
     "uvicorn[standard]>=0.30,<1",
 ]
+packaging = [
+    "pyinstaller>=6,<7",
+]
 dev = [
     "pytest",
     "requests",
@@ -55,6 +58,7 @@ dev = [
     "flake8",
     "flake8-bandit",
     "flake8-bugbear",
+    "poethepoet",
 ]
 
 [tool.pytest.ini_options]
@@ -83,3 +87,26 @@ push            = true
 [tool.bumpver.file_patterns]
 "pyproject.toml" = ["{version}"]
 "skelly_synchronize/__init__.py" = ["{version}"]
+
+[tool.poe.tasks]
+test = "pytest skelly_synchronize/tests"
+test-slow = "pytest -m slow"
+format = "black ."
+
+[tool.poe.tasks.freeze-api]
+help = "Freeze skelly-sync-api with PyInstaller and place it under src-tauri/binaries/ for `tauri build` (see CONTRIBUTING.md)."
+shell = """
+set -euo pipefail
+rm -rf build dist
+pyinstaller packaging/pyinstaller/skelly-sync-api.spec --noconfirm
+TRIPLE=$(rustc -vV | sed -n 's/host: //p')
+if [ -z "$TRIPLE" ]; then
+    echo "error: could not determine target triple (is the Rust toolchain installed?)" >&2
+    exit 1
+fi
+mkdir -p src-tauri/binaries
+cp dist/skelly-sync-api "src-tauri/binaries/skelly-sync-api-$TRIPLE"
+chmod +x "src-tauri/binaries/skelly-sync-api-$TRIPLE"
+rm -rf build dist
+echo "Sidecar ready at src-tauri/binaries/skelly-sync-api-$TRIPLE"
+"""

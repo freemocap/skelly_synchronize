@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { open } from "@tauri-apps/plugin-dialog";
 import { ApiError, createJob } from "../api/client";
 import type { SyncMethod, VideoBackendKind } from "../api/types";
 import { ErrorBanner } from "../components/ErrorBanner";
@@ -17,6 +18,13 @@ export function SetupScreen({ onJobCreated }: SetupScreenProps) {
   const [createDebugArtifacts, setCreateDebugArtifacts] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+
+  const handleBrowse = async (setPath: (path: string) => void) => {
+    const selected = await open({ directory: true, multiple: false });
+    if (typeof selected === "string") {
+      setPath(selected);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,13 +54,21 @@ export function SetupScreen({ onJobCreated }: SetupScreenProps) {
       <form onSubmit={handleSubmit}>
         <label>
           Raw video folder path
-          <input
-            type="text"
-            value={rawFolderPath}
-            onChange={(e) => setRawFolderPath(e.target.value)}
-            placeholder="/path/to/raw_videos"
-            required
-          />
+          <div className="path-input-row">
+            <input
+              type="text"
+              value={rawFolderPath}
+              onChange={(e) => setRawFolderPath(e.target.value)}
+              placeholder="/path/to/raw_videos"
+              required
+            />
+            <button
+              type="button"
+              onClick={() => handleBrowse(setRawFolderPath)}
+            >
+              Browse…
+            </button>
+          </div>
         </label>
 
         <label>
@@ -102,12 +118,20 @@ export function SetupScreen({ onJobCreated }: SetupScreenProps) {
 
         <label>
           Output folder path (optional)
-          <input
-            type="text"
-            value={outputFolderPath}
-            onChange={(e) => setOutputFolderPath(e.target.value)}
-            placeholder="defaults to a synchronized_videos folder next to the raw folder"
-          />
+          <div className="path-input-row">
+            <input
+              type="text"
+              value={outputFolderPath}
+              onChange={(e) => setOutputFolderPath(e.target.value)}
+              placeholder="defaults to a synchronized_videos folder next to the raw folder"
+            />
+            <button
+              type="button"
+              onClick={() => handleBrowse(setOutputFolderPath)}
+            >
+              Browse…
+            </button>
+          </div>
         </label>
 
         <button type="submit" disabled={submitting}>

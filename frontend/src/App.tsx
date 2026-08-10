@@ -4,6 +4,7 @@ import { SetupScreen } from "./screens/SetupScreen";
 import { ProgressScreen } from "./screens/ProgressScreen";
 import { ResultScreen } from "./screens/ResultScreen";
 import { HistoryScreen } from "./screens/HistoryScreen";
+import { useApiReadiness } from "./hooks/useApiReadiness";
 
 type View =
   | { screen: "setup" }
@@ -13,6 +14,15 @@ type View =
 
 function App() {
   const [view, setView] = useState<View>({ screen: "setup" });
+  const { ready } = useApiReadiness();
+
+  if (!ready) {
+    return (
+      <div className="app-loading">
+        <p>Starting sync engine…</p>
+      </div>
+    );
+  }
 
   return (
     <>

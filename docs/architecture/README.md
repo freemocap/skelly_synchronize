@@ -6,9 +6,9 @@ This directory describes the **target** architecture for the `skelly_synchronize
 
 1. Improve the code quality of the core synchronization library — typed data models, a proper backend abstraction, unified pipeline orchestration, and fixes to the concurrency/correctness smells listed in [00-known-issues.md](00-known-issues.md).
 2. Add a FastAPI server exposing sync functionality over HTTP.
-3. Replace the PySide6 desktop GUI with a simple React frontend.
+3. Replace the PySide6 desktop GUI with a React frontend, packaged as a standalone Tauri desktop app.
 
-**Done** looks like: a `core` library with typed models and no known-issue regressions, a FastAPI server backing all the functionality the old GUI exposed (plus previously-hidden parameters it never surfaced), and a React frontend at feature parity with the old GUI — after which the PySide6 GUI package is deleted.
+**Done** looks like: a `core` library with typed models and no known-issue regressions, a FastAPI server backing all the functionality the old GUI exposed (plus previously-hidden parameters it never surfaced), and a React frontend at feature parity with the old GUI, packaged into one Tauri desktop app — after which the PySide6 GUI package is deleted.
 
 ## Document map
 
@@ -20,27 +20,34 @@ This directory describes the **target** architecture for the `skelly_synchronize
 | [03-api-design.md](03-api-design.md) | `skelly_synchronize.api` design: FastAPI endpoints, schemas, job model, progress bridge. |
 | [04-frontend.md](04-frontend.md) | React app: screens, API client, state management approach. |
 | [05-testing-strategy.md](05-testing-strategy.md) | Test pyramid across `core`/`api`/frontend, fixture redesign, CI plan. |
+| [06-tauri-desktop.md](06-tauri-desktop.md) | Tauri desktop shell: sidecar process model for `api`, native folder picker, PyInstaller packaging, dev/release workflow. |
 
 Read in the numbered order above — each later doc assumes the decisions made in the earlier ones (package boundaries before core design, core design before the API that wraps it, API before the frontend that consumes it).
 
 ## Target architecture at a glance
 
 ```
-        ┌────────────┐
-        │  frontend  │  React (Vite + TS) — talks HTTP only
-        └─────┬──────┘
-              │ HTTP (polling)
-        ┌─────▼──────┐
-        │    api     │  FastAPI (skelly_synchronize.api) — job orchestration, HTTP boundary
-        └─────┬──────┘
-              │ Python calls
-        ┌─────▼──────┐       ┌────────────┐
-        │    core    │◄──────┤    cli     │  both depend only on core
-        │(skelly_synchronize.core)  └──────┘
-        └────────────┘
+        ┌───────────────────────────────────┐
+        │          Tauri desktop app         │
+        │                                     │
+        │   ┌────────────┐                    │
+        │   │  frontend  │  React (Vite + TS) │
+        │   └─────┬──────┘                    │
+        │         │ HTTP (polling)            │
+        │   ┌─────▼──────┐                    │
+        │   │    api     │  spawned as a      │
+        │   └─────┬──────┘  managed sidecar   │
+        │         │         process — see     │
+        │         │         06-tauri-desktop  │
+        └─────────┼───────────────────────────┘
+                  │ Python calls
+            ┌─────▼──────┐       ┌────────────┐
+            │    core    │◄──────┤    cli     │  both depend only on core
+            │(skelly_synchronize.core)  └──────┘
+            └────────────┘
 ```
 
-`core` has no knowledge of `api` or `frontend`. `api` and `cli` are both thin consumers of `core`, so the sync engine is usable standalone (scriptable, embeddable elsewhere within this same package) independent of whether the API/frontend exist at all. `core`, `api`, and `cli` all live in one PyPI distribution (`skelly_synchronize`), with `api`'s dependencies behind an optional extra — see [01-package-layout.md](01-package-layout.md) for the full package tree and the rationale for keeping this as one package for now.
+`core` has no knowledge of `api`, `frontend`, or the Tauri shell. `api` and `cli` are both thin consumers of `core`, so the sync engine is usable standalone (scriptable, embeddable elsewhere within this same package) independent of whether the API/frontend/desktop shell exist at all. `core`, `api`, and `cli` all live in one PyPI distribution (`skelly_synchronize`), with `api`'s dependencies behind an optional extra — see [01-package-layout.md](01-package-layout.md) for the full package tree and the rationale for keeping this as one package for now. The Tauri shell (`src-tauri/`) is a separate, non-Python part of the same repo — see [06-tauri-desktop.md](06-tauri-desktop.md).
 
 ## Non-goals
 
@@ -57,7 +64,8 @@ The rewrite proceeds in phases. **Each phase ends with the tool still fully usab
 2. **Phase 1 — finish the `core` rewrite.** Complete the pipeline abstraction, the brightness path, the `DeffcodeBackend`, the audio subsystem, and debug artifacts. The old GUI now runs entirely against the new `core` library — this phase proves `core`'s public surface is sufficient before any API work begins.
 3. **Phase 2 — FastAPI layer.** Build `skelly_synchronize.api` wrapping the now-finished `core`, starting with an in-memory job store. Test manually via the FastAPI-generated `/docs` UI — no frontend exists yet.
 4. **Phase 3 — React frontend.** Build the frontend against the FastAPI layer from Phase 2. Once it reaches feature parity with the old GUI, delete the PySide6 GUI package entirely.
-5. **Phase 4 — cleanup.** Remove any remaining old dict-based code paths, finalize packaging/CI per [01-package-layout.md](01-package-layout.md) and [05-testing-strategy.md](05-testing-strategy.md), update the top-level README, and tag a release.
+5. **Phase 4 — Tauri desktop packaging.** Wrap the frontend in a Tauri shell that manages the API as a sidecar process (per [06-tauri-desktop.md](06-tauri-desktop.md)), freeze the API with PyInstaller, and add a native folder picker. Ends with a distributable standalone desktop app.
+6. **Phase 5 — cleanup.** Remove any remaining old dict-based code paths, finalize packaging/CI per [01-package-layout.md](01-package-layout.md) and [05-testing-strategy.md](05-testing-strategy.md), update the top-level README, and tag a release.
 
 ## Key decisions at a glance
 
@@ -70,3 +78,7 @@ The rewrite proceeds in phases. **Each phase ends with the tool still fully usab
 | Progress reporting | `core` exposes a generic callback hook; `api` supplies the actual mechanism | Keeps `core` deployment-agnostic. [02-core-library.md](02-core-library.md), [03-api-design.md](03-api-design.md) |
 | Typed data model approach | Pydantic throughout `core`/`api` (raw audio arrays excluded) | Avoids a dataclass↔Pydantic translation layer since FastAPI already requires Pydantic. [02-core-library.md](02-core-library.md) |
 | Long-running job UX | Async job + polling (not WebSockets) | Simple, sufficient for a local single-user app. [03-api-design.md](03-api-design.md) |
+| Desktop shell | Tauri 2 (system webview, not Electron) | Wraps the existing React frontend unchanged; small bundle size vs. a bundled-Chromium alternative. [06-tauri-desktop.md](06-tauri-desktop.md) |
+| Python packaging for desktop | PyInstaller sidecar, spawned/managed by the Tauri shell | True standalone app, no separate Python install required by end users. [06-tauri-desktop.md](06-tauri-desktop.md) |
+| Folder selection | Native OS dialog via `tauri-plugin-dialog` | Real fix for the browser file-picker limitation, once the frontend only runs inside Tauri — no server-side browse endpoint needed. [06-tauri-desktop.md](06-tauri-desktop.md) |
+| FFmpeg bundling | Stays an external system dependency, not bundled into the app | Avoids binary-bundling/licensing complexity for v1; consistent with the project's existing FFmpeg requirement. [06-tauri-desktop.md](06-tauri-desktop.md) |

@@ -20,3 +20,11 @@
 .app-header nav a:hover {
   text-decoration: underline;
 }
+
+.app-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  color: var(--text-secondary, #666);
+}
