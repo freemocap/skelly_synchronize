@@ -37,7 +37,7 @@ def test_probe_parses_duration_and_fps(monkeypatch, backend):
 
     video_info = backend.probe(Path("some_video.mp4"))
 
-    assert video_info.camera_name == "some_video"
+    assert video_info.video_name == "some_video"
     assert video_info.duration_seconds == 12.5
     assert video_info.fps == 30.0
 

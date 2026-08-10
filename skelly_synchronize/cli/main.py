@@ -106,9 +106,9 @@ def main(argv: list[str] | None = None) -> int:
         create_debug_artifacts=args.create_debug_artifacts,
     )
 
-    def progress_callback(camera_name: str, progress: float) -> None:
+    def progress_callback(video_name: str, progress: float) -> None:
         if progress >= 1.0:
-            print(f"  {camera_name}: trimmed")
+            print(f"  {video_name}: trimmed")
 
     try:
         result = run_pipeline(request, progress_callback)
@@ -121,7 +121,7 @@ def main(argv: list[str] | None = None) -> int:
     print(f"Synchronized frame count: {result.synchronized_frame_count}")
     print("Lags:")
     for lag in result.lags:
-        print(f"  {lag.camera_name}: {lag.lag_seconds:.4f}s")
+        print(f"  {lag.video_name}: {lag.lag_seconds:.4f}s")
     print(f"Final video length: {result.synchronized_frame_count} frames")
     if result.debug_artifact_paths:
         print("Debug artifacts:")

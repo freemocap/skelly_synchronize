@@ -6,10 +6,10 @@ from skelly_synchronize.core.debug import save_debug_toml
 from skelly_synchronize.core.models import LagResult, VideoInfo
 
 
-def _make_video_info(camera_name: str, fps: float = 29.97) -> VideoInfo:
+def _make_video_info(video_name: str, fps: float = 29.97) -> VideoInfo:
     return VideoInfo(
-        filepath=Path(f"{camera_name}.mp4"),
-        camera_name=camera_name,
+        filepath=Path(f"{video_name}.mp4"),
+        video_name=video_name,
         duration_seconds=10.0,
         fps=fps,
     )
@@ -28,7 +28,7 @@ def test_save_debug_toml_surfaces_synchronized_fps(tmp_path):
             _make_video_info("synced_cam_a"),
             _make_video_info("synced_cam_b"),
         ],
-        lags=[LagResult(camera_name="cam_a", lag_seconds=0.0)],
+        lags=[LagResult(video_name="cam_a", lag_seconds=0.0)],
         synchronized_fps=29.97,
         synchronized_frame_count=872,
     )

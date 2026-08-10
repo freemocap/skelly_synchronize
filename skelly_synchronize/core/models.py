@@ -3,7 +3,7 @@ from pathlib import Path
 
 from pydantic import BaseModel
 
-CameraName = str  # alias for clarity in signatures
+VideoName = str  # alias for clarity in signatures
 
 
 class VideoBackendKind(str, Enum):
@@ -18,7 +18,7 @@ class SyncMethod(str, Enum):
 
 class VideoInfo(BaseModel):
     filepath: Path
-    camera_name: str
+    video_name: str
     duration_seconds: float
     fps: float
     frame_count: int | None = None
@@ -26,14 +26,14 @@ class VideoInfo(BaseModel):
 
 class AudioInfo(BaseModel):
     filepath: Path
-    camera_name: str
+    video_name: str
     sample_rate: int
     duration_seconds: float
     # raw signal (np.ndarray) is intentionally NOT a field here
 
 
 class LagResult(BaseModel):
-    camera_name: str
+    video_name: str
     lag_seconds: float
     confidence: float | None = None
 
@@ -55,5 +55,5 @@ class SyncResult(BaseModel):
     debug_artifact_paths: list[Path]
     elapsed_seconds: float
     # The single frame count shared by every synchronized video -- verified
-    # identical across cameras by VerifySynchronizedFrameCountStage
+    # identical across videos by VerifySynchronizedFrameCountStage
     synchronized_frame_count: int | None = None

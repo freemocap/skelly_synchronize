@@ -9,21 +9,21 @@
 
 ## Data models
 
-All models are Pydantic `BaseModel`s, not plain dataclasses. This is a deliberate choice: `api` already requires Pydantic for FastAPI request/response validation, so sharing model definitions between `core` and `api` avoids a duplicate translation layer. The one exception is raw audio signal data (numpy arrays), which is kept **outside** any Pydantic model — large ndarrays don't serialize well and aren't meant to cross the API boundary — and instead passed alongside models as a plain `dict[str, np.ndarray]` keyed by camera name.
+All models are Pydantic `BaseModel`s, not plain dataclasses. This is a deliberate choice: `api` already requires Pydantic for FastAPI request/response validation, so sharing model definitions between `core` and `api` avoids a duplicate translation layer. The one exception is raw audio signal data (numpy arrays), which is kept **outside** any Pydantic model — large ndarrays don't serialize well and aren't meant to cross the API boundary — and instead passed alongside models as a plain `dict[str, np.ndarray]` keyed by video name.
 
 ```python
-CameraName = str  # alias for clarity in signatures
+VideoName = str  # alias for clarity in signatures
 
 class VideoInfo(BaseModel):
     filepath: Path
-    camera_name: str
+    video_name: str
     duration_seconds: float
     fps: float
     frame_count: int | None = None
 
 class AudioInfo(BaseModel):
     filepath: Path
-    camera_name: str
+    video_name: str
     sample_rate: int
     duration_seconds: float
     # raw signal (np.ndarray) is intentionally NOT a field here
@@ -33,7 +33,7 @@ class SyncMethod(str, Enum):
     BRIGHTNESS = "brightness"
 
 class LagResult(BaseModel):
-    camera_name: str
+    video_name: str
     lag_seconds: float
     confidence: float | None = None  # resolves KI-14
 
@@ -56,7 +56,7 @@ class SyncResult(BaseModel):
 
 ### `LagResult` contract (resolves KI-02)
 
-Every lag-producing algorithm (audio cross-correlation, brightness-change detection) must return `LagResult` values that share **one contract**: `lag_seconds` is the number of seconds to trim off the front of that specific video so that all videos align, normalized so the minimum lag across all cameras is `0`. The current codebase normalizes this way for the audio path only and returns raw un-normalized values for the brightness path — this only "works" today because downstream trimming code happens to treat both the same way. In the rewrite, normalization happens once, centrally, right before `ComputeLagsStage` returns — not duplicated per-algorithm, and not left as an implicit assumption.
+Every lag-producing algorithm (audio cross-correlation, brightness-change detection) must return `LagResult` values that share **one contract**: `lag_seconds` is the number of seconds to trim off the front of that specific video so that all videos align, normalized so the minimum lag across all videos is `0`. The current codebase normalizes this way for the audio path only and returns raw un-normalized values for the brightness path — this only "works" today because downstream trimming code happens to treat both the same way. In the rewrite, normalization happens once, centrally, right before `ComputeLagsStage` returns — not duplicated per-algorithm, and not left as an implicit assumption.
 
 ## `VideoBackend` interface (resolves KI-03)
 
@@ -111,8 +111,8 @@ Shared stage list, used by **both** sync methods (this is what eliminates the cu
 
 Replace `multiprocessing.Pool.starmap` with `concurrent.futures.ProcessPoolExecutor` + `as_completed`. This gives two things the current implementation lacks:
 
-- **Per-task error isolation**: today, if one worker's `trim_single_video` raises, the whole `starmap` call surfaces a single aggregate failure with no partial-result visibility. `as_completed` lets the pipeline report exactly which camera failed and why, while still letting sibling trims finish.
-- **A natural hook for progress reporting**: each completed future can immediately report per-camera progress instead of the pipeline blocking silently until every video is done.
+- **Per-task error isolation**: today, if one worker's `trim_single_video` raises, the whole `starmap` call surfaces a single aggregate failure with no partial-result visibility. `as_completed` lets the pipeline report exactly which video failed and why, while still letting sibling trims finish.
+- **A natural hook for progress reporting**: each completed future can immediately report per-video progress instead of the pipeline blocking silently until every video is done.
 
 Worker function signature takes only picklable arguments: `(video_info: VideoInfo, lag: LagResult, backend_kind: VideoBackendKind, output_dir: Path)`.
 
@@ -126,7 +126,7 @@ The deffcode trim path's current `frame_number in frame_list` check (O(n) list s
 
 ## Audio subsystem
 
-- **Reference-camera selection (resolves KI-13)**: today, `find_cross_correlation_lags` picks `next(iter(audio_signal_dict))`, an implicit dependency on alphabetical file-discovery order. The rewrite makes this an explicit, documented strategy — recommend "camera with the longest audio duration" as a tie-break-free deterministic choice (falls back sensibly even if all durations happen to match, since ties then resolve to sorted-camera-name order, which is still deterministic and documented).
+- **Reference-video selection (resolves KI-13)**: today, `find_cross_correlation_lags` picks `next(iter(audio_signal_dict))`, an implicit dependency on alphabetical file-discovery order. The rewrite makes this an explicit, documented strategy — recommend "video with the longest audio duration" as a tie-break-free deterministic choice (falls back sensibly even if all durations happen to match, since ties then resolve to sorted-video-name order, which is still deterministic and documented).
 - **In-memory reuse (resolves KI-12)**: `trim_audio_files` reuses the signal already loaded during extraction instead of reloading each `.wav` from disk.
 - **Confidence score (resolves KI-14)**: `cross_correlate` additionally returns a confidence metric (e.g. ratio of the peak correlation value to the surrounding noise floor, or peak sharpness) that populates `LagResult.confidence`.
 - **In-memory-only loading (KI-11)**: accepted as a documented v1 limitation given the local single-user, minutes-not-hours use case. Not addressed by streaming in this pass.

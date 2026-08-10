@@ -136,7 +136,7 @@ class FfmpegBackend:
         fps = self._extract_video_fps(filepath)
         return VideoInfo(
             filepath=filepath,
-            camera_name=filepath.stem,
+            video_name=filepath.stem,
             duration_seconds=duration_seconds,
             fps=fps,
         )

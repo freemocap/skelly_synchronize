@@ -38,7 +38,7 @@ For each job, `api` creates a `multiprocessing.Manager().dict()` and passes a ca
 | Method & path | Purpose |
 |---|---|
 | `GET /health` | Liveness check, `{"status": "ok"}`. |
-| `GET /cameras?folder_path=...` | Validates a folder path and returns the discovered video files/camera names, using `core`'s discovery stage standalone — lets the frontend show a preview before a job is started. |
+| `GET /videos?folder_path=...` | Validates a folder path and returns the discovered video files/video names, using `core`'s discovery stage standalone — lets the frontend show a preview before a job is started. |
 | `POST /jobs` | Body: `SyncRequest`. Starts a job in a new process, returns `201 {job_id, status: "pending"}` immediately. |
 | `GET /jobs/{job_id}` | Returns the full `Job` — status, progress, progress_message, `result` if succeeded, `error` if failed. |
 | `GET /jobs` | Lists recent jobs (in-memory, capped at e.g. the last 20) — powers a simple job-history panel. |

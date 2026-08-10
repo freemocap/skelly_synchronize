@@ -14,11 +14,11 @@ from skelly_synchronize.core.models import (
 
 def test_video_info_requires_all_fields():
     with pytest.raises(ValidationError):
-        VideoInfo(filepath=Path("video.mp4"), camera_name="cam_1")
+        VideoInfo(filepath=Path("video.mp4"), video_name="cam_1")
 
     video_info = VideoInfo(
         filepath=Path("video.mp4"),
-        camera_name="cam_1",
+        video_name="cam_1",
         duration_seconds=10.0,
         fps=30.0,
     )
@@ -26,7 +26,7 @@ def test_video_info_requires_all_fields():
 
 
 def test_lag_result_confidence_is_optional():
-    lag_result = LagResult(camera_name="cam_1", lag_seconds=0.5)
+    lag_result = LagResult(video_name="cam_1", lag_seconds=0.5)
     assert lag_result.confidence is None
 
 

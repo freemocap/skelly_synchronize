@@ -32,17 +32,17 @@ def save_debug_toml(
     count shared by every synchronized video -- surfaced explicitly here
     (rather than requiring a reader to cross-check every entry in
     `synchronized_video_information`) since an exact frame-count match across
-    cameras is the core correctness guarantee synchronization is supposed to
+    videos is the core correctness guarantee synchronization is supposed to
     provide.
     """
     data = {
         "raw_video_information": {
-            video.camera_name: video.model_dump(mode="json") for video in videos_before
+            video.video_name: video.model_dump(mode="json") for video in videos_before
         },
         "synchronized_video_information": {
-            video.camera_name: video.model_dump(mode="json") for video in videos_after
+            video.video_name: video.model_dump(mode="json") for video in videos_after
         },
-        "lag_results": {lag.camera_name: lag.model_dump() for lag in lags},
+        "lag_results": {lag.video_name: lag.model_dump() for lag in lags},
     }
     # toml has no null type, so an unknown value is an absent key, not a null value.
     if synchronized_fps is not None:
@@ -110,15 +110,15 @@ def plot_brightness_series(
     axs[0].set_title("Before Trimming")
     axs[1].set_title("After Trimming")
 
-    for camera_name, brightness_array in before_series.items():
-        fps = before_fps[camera_name]
+    for video_name, brightness_array in before_series.items():
+        fps = before_fps[video_name]
         time = np.arange(len(brightness_array)) / fps
-        axs[0].plot(time, brightness_array, alpha=0.5, label=camera_name)
+        axs[0].plot(time, brightness_array, alpha=0.5, label=video_name)
 
-    for camera_name, brightness_array in after_series.items():
-        fps = after_fps[camera_name]
+    for video_name, brightness_array in after_series.items():
+        fps = after_fps[video_name]
         time = np.arange(len(brightness_array)) / fps
-        axs[1].plot(time, brightness_array, alpha=0.5, label=camera_name)
+        axs[1].plot(time, brightness_array, alpha=0.5, label=video_name)
 
     output_path = Path(output_path)
     logger.info(f"Saving debug plots to: {output_path}")

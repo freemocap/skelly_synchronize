@@ -35,7 +35,7 @@ Replaces today's GUI, which only exposes 2 of the several parameters `core` actu
 
 ### Result screen
 
-- Per-camera lag summary table (`camera_name`, `lag_seconds`, `confidence`) from `SyncResult.lags`.
+- Per-video lag summary table (`video_name`, `lag_seconds`, `confidence`) from `SyncResult.lags`.
 - Debug plot image, `<img src="/jobs/{id}/debug-plot">`, shown only if debug artifacts were requested.
 - Output folder path, shown as selectable text (a browser page cannot open a native file-manager window — documented as a known limitation rather than attempted).
 - "Run another sync" button, returns to Setup.
@@ -46,7 +46,7 @@ Lists recent jobs from `GET /jobs`; clicking one re-displays its Result screen. 
 
 ## Error display (resolves part of KI-22)
 
-Today, sync errors are only visible in logs/stdout — the GUI has no error dialog. The new frontend shows inline error banners on the relevant screen, reading either `Job.error` (job-level failures) or the HTTP response's `detail` field (request-level failures, e.g. an invalid folder path from `GET /cameras` or `POST /jobs`).
+Today, sync errors are only visible in logs/stdout — the GUI has no error dialog. The new frontend shows inline error banners on the relevant screen, reading either `Job.error` (job-level failures) or the HTTP response's `detail` field (request-level failures, e.g. an invalid folder path from `GET /videos` or `POST /jobs`).
 
 ## Styling
 

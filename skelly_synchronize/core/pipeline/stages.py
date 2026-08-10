@@ -185,7 +185,7 @@ class NormalizeFramerateStage:
 
         for video in videos:
             output_path = (
-                normalized_folder / f"{video.camera_name}.{VideoExtension.MP4.value}"
+                normalized_folder / f"{video.video_name}.{VideoExtension.MP4.value}"
             )
             normalize_framerate_and_sample_rate(
                 video.filepath, output_path, target_fps, target_sample_rate
@@ -211,12 +211,10 @@ class AudioLagStage:
         audio_signals = {}
         sample_rate = None
         for video in context.videos:
-            audio_path = (
-                audio_folder / f"{video.camera_name}.{AudioExtension.WAV.value}"
-            )
+            audio_path = audio_folder / f"{video.video_name}.{AudioExtension.WAV.value}"
             extract_audio(video.filepath, audio_path)
-            camera_signal, sample_rate = librosa.load(path=audio_path, sr=None)
-            audio_signals[video.camera_name] = camera_signal
+            video_signal, sample_rate = librosa.load(path=audio_path, sr=None)
+            audio_signals[video.video_name] = video_signal
 
         context.pre_trim_videos = list(context.videos)
         context.audio_folder_path = audio_folder
@@ -241,14 +239,14 @@ class BrightnessLagStage:
             event = find_first_brightness_change(series, video.fps, threshold)
             if event is None:
                 raise SkellySyncError(
-                    f"No brightness change detected for camera {video.camera_name}"
+                    f"No brightness change detected for video {video.video_name}"
                 )
-            raw_lags[video.camera_name] = event.lag_seconds
+            raw_lags[video.video_name] = event.lag_seconds
 
         max_lag = max(raw_lags.values())
         context.lags = [
-            LagResult(camera_name=camera_name, lag_seconds=max_lag - raw_lag)
-            for camera_name, raw_lag in raw_lags.items()
+            LagResult(video_name=video_name, lag_seconds=max_lag - raw_lag)
+            for video_name, raw_lag in raw_lags.items()
         ]
         return context
 
@@ -266,7 +264,7 @@ def _trim_video_worker(
     instance, and probing the result always goes through ffmpeg (KI-03).
     """
     backend = get_backend(backend_kind)
-    output_path = Path(output_dir) / synced_video_filename(video_info.camera_name)
+    output_path = Path(output_dir) / synced_video_filename(video_info.video_name)
 
     start_seconds = lag.lag_seconds
     end_seconds = start_seconds + minimum_duration
@@ -279,19 +277,19 @@ class TrimStage:
     """Trims every video to the shared window in parallel.
 
     Uses `ProcessPoolExecutor` + `as_completed` instead of
-    `multiprocessing.Pool.starmap` so a single camera's trim failure doesn't
-    hide which camera failed or block progress reporting for the others.
+    `multiprocessing.Pool.starmap` so a single video's trim failure doesn't
+    hide which video failed or block progress reporting for the others.
     """
 
     def run(
         self, context: PipelineContext, progress_callback: ProgressCallback | None
     ) -> PipelineContext:
         videos = context.videos
-        lags_by_camera = {lag.camera_name: lag for lag in context.lags}
+        lags_by_video = {lag.video_name: lag for lag in context.lags}
         output_dir = context.synchronized_folder_path
 
         minimum_duration = min(
-            video.duration_seconds - lags_by_camera[video.camera_name].lag_seconds
+            video.duration_seconds - lags_by_video[video.video_name].lag_seconds
             for video in videos
         )
 
@@ -300,36 +298,36 @@ class TrimStage:
         results: list[VideoInfo] = []
         errors: list[tuple[str, BaseException]] = []
         with ProcessPoolExecutor(max_workers=max_workers) as executor:
-            future_to_camera = {
+            future_to_video = {
                 executor.submit(
                     _trim_video_worker,
                     video,
-                    lags_by_camera[video.camera_name],
+                    lags_by_video[video.video_name],
                     context.request.video_handler,
                     output_dir,
                     minimum_duration,
-                ): video.camera_name
+                ): video.video_name
                 for video in videos
             }
-            for future in as_completed(future_to_camera):
-                camera_name = future_to_camera[future]
+            for future in as_completed(future_to_video):
+                video_name = future_to_video[future]
                 try:
                     results.append(future.result())
                     if progress_callback is not None:
-                        progress_callback(camera_name, 1.0)
-                except Exception as e:  # noqa: BLE001 - isolate per-camera failures
+                        progress_callback(video_name, 1.0)
+                except Exception as e:  # noqa: BLE001 - isolate per-video failures
                     logger.error(
-                        f"Error trimming video {camera_name}: {e}", exc_info=True
+                        f"Error trimming video {video_name}: {e}", exc_info=True
                     )
-                    errors.append((camera_name, e))
+                    errors.append((video_name, e))
 
         if errors:
-            failed_cameras = ", ".join(camera_name for camera_name, _ in errors)
+            failed_videos = ", ".join(video_name for video_name, _ in errors)
             raise SkellySyncError(
-                f"Trimming failed for camera(s): {failed_cameras}"
+                f"Trimming failed for video(s): {failed_videos}"
             ) from errors[0][1]
 
-        context.videos = sorted(results, key=lambda video: video.camera_name)
+        context.videos = sorted(results, key=lambda video: video.video_name)
         return context
 
 
@@ -337,7 +335,7 @@ class VerifySynchronizedFramerateStage:
     """Hard-fail if the trimmed videos don't all share one exact framerate.
 
     Synchronized videos are only actually synchronized if every frame index
-    maps to the same wall-clock time across cameras -- a framerate mismatch
+    maps to the same wall-clock time across videos -- a framerate mismatch
     (even a tiny one introduced by a backend's re-encode) silently breaks
     that guarantee, so this is checked explicitly rather than assumed.
     """
@@ -345,13 +343,13 @@ class VerifySynchronizedFramerateStage:
     def run(
         self, context: PipelineContext, progress_callback: ProgressCallback | None
     ) -> PipelineContext:
-        fps_by_camera = {video.camera_name: video.fps for video in context.videos}
-        unique_fps_values = set(fps_by_camera.values())
+        fps_by_video = {video.video_name: video.fps for video in context.videos}
+        unique_fps_values = set(fps_by_video.values())
 
         if len(unique_fps_values) > 1:
             raise SkellySyncError(
                 "Synchronized videos do not share an identical framerate: "
-                f"{fps_by_camera}"
+                f"{fps_by_video}"
             )
 
         context.synchronized_fps = (
@@ -364,8 +362,8 @@ class VerifySynchronizedFrameCountStage:
     """Hard-fail if the trimmed videos don't all have identical frame counts.
 
     This is the actual correctness guarantee of synchronization: if any
-    camera's output has even one more or fewer frames than the others, frame
-    N no longer corresponds to the same instant across cameras. Each video's
+    video's output has even one more or fewer frames than the others, frame
+    N no longer corresponds to the same instant across videos. Each video's
     `frame_count` was already read directly from its file during probing
     (`_probe_with_frame_count`), so this stage just compares those real,
     already-measured counts rather than re-deriving anything from duration/fps
@@ -375,15 +373,15 @@ class VerifySynchronizedFrameCountStage:
     def run(
         self, context: PipelineContext, progress_callback: ProgressCallback | None
     ) -> PipelineContext:
-        frame_counts_by_camera = {
-            video.camera_name: video.frame_count for video in context.videos
+        frame_counts_by_video = {
+            video.video_name: video.frame_count for video in context.videos
         }
-        unique_frame_counts = set(frame_counts_by_camera.values())
+        unique_frame_counts = set(frame_counts_by_video.values())
 
         if len(unique_frame_counts) > 1:
             raise SkellySyncError(
                 "Synchronized videos do not have identical frame counts: "
-                f"{frame_counts_by_camera}"
+                f"{frame_counts_by_video}"
             )
 
         context.synchronized_frame_count = (
@@ -396,7 +394,7 @@ class ReattachAudioStage:
     def run(
         self, context: PipelineContext, progress_callback: ProgressCallback | None
     ) -> PipelineContext:
-        lags_by_camera = {lag.camera_name: lag for lag in context.lags}
+        lags_by_video = {lag.video_name: lag for lag in context.lags}
         synced_length_seconds = (
             context.videos[0].duration_seconds if context.videos else 0.0
         )
@@ -405,16 +403,16 @@ class ReattachAudioStage:
         trimmed_audio_paths = trim_audio_in_memory(
             context.audio_signals,
             context.audio_sample_rate,
-            lags_by_camera,
+            lags_by_video,
             synced_length_seconds,
             trimmed_audio_folder,
         )
 
         for lag in context.lags:
             video_path = context.synchronized_folder_path / synced_video_filename(
-                lag.camera_name
+                lag.video_name
             )
-            audio_path = trimmed_audio_paths[lag.camera_name]
+            audio_path = trimmed_audio_paths[lag.video_name]
 
             with tempfile.TemporaryDirectory(
                 dir=str(context.synchronized_folder_path)
@@ -467,22 +465,22 @@ class DebugArtifactsStage:
                 )
 
                 before_series = {
-                    video.camera_name: compute_brightness_series(video)
+                    video.video_name: compute_brightness_series(video)
                     for video in context.pre_trim_videos
                 }
                 after_series = {
-                    video.camera_name: compute_brightness_series(video)
+                    video.video_name: compute_brightness_series(video)
                     for video in context.videos
                 }
-                for camera_name, series in before_series.items():
+                for video_name, series in before_series.items():
                     save_brightness_series(
                         series,
                         source_folder
-                        / f"{camera_name}{BRIGHTNESS_SUFFIX}.{NUMPY_EXTENSION}",
+                        / f"{video_name}{BRIGHTNESS_SUFFIX}.{NUMPY_EXTENSION}",
                     )
 
-                before_fps = {v.camera_name: v.fps for v in context.pre_trim_videos}
-                after_fps = {v.camera_name: v.fps for v in context.videos}
+                before_fps = {v.video_name: v.fps for v in context.pre_trim_videos}
+                after_fps = {v.video_name: v.fps for v in context.videos}
                 plot_brightness_series(
                     before_series, before_fps, after_series, after_fps, plot_path
                 )

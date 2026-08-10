@@ -33,9 +33,9 @@ def test_brightness_sync_pipeline_end_to_end(
 
     assert result.synchronized_video_folder_path.exists()
 
-    lags_by_camera = {lag.camera_name: lag.lag_seconds for lag in result.lags}
-    for camera_name, expected_lag in EXPECTED_LAG_SECONDS.items():
-        assert lags_by_camera[camera_name] == pytest.approx(
+    lags_by_video = {lag.video_name: lag.lag_seconds for lag in result.lags}
+    for video_name, expected_lag in EXPECTED_LAG_SECONDS.items():
+        assert lags_by_video[video_name] == pytest.approx(
             expected_lag, abs=LAG_TOLERANCE_SECONDS
         )
 

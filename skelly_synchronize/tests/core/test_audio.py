@@ -5,36 +5,36 @@ import numpy as np
 from skelly_synchronize.core.audio import (
     cross_correlate,
     find_cross_correlation_lags,
-    get_reference_camera_name,
+    get_reference_video_name,
     trim_audio_in_memory,
 )
 from skelly_synchronize.core.models import LagResult, VideoInfo
 
 
-def _make_video_info(camera_name: str, duration_seconds: float) -> VideoInfo:
+def _make_video_info(video_name: str, duration_seconds: float) -> VideoInfo:
     return VideoInfo(
-        filepath=Path(f"{camera_name}.mp4"),
-        camera_name=camera_name,
+        filepath=Path(f"{video_name}.mp4"),
+        video_name=video_name,
         duration_seconds=duration_seconds,
         fps=30.0,
     )
 
 
-def test_get_reference_camera_name_picks_longest_duration():
+def test_get_reference_video_name_picks_longest_duration():
     videos = [
         _make_video_info("cam_a", 10.0),
         _make_video_info("cam_b", 12.0),
         _make_video_info("cam_c", 11.0),
     ]
-    assert get_reference_camera_name(videos) == "cam_b"
+    assert get_reference_video_name(videos) == "cam_b"
 
 
-def test_get_reference_camera_name_ties_break_by_name():
+def test_get_reference_video_name_ties_break_by_name():
     videos = [
         _make_video_info("cam_b", 10.0),
         _make_video_info("cam_a", 10.0),
     ]
-    assert get_reference_camera_name(videos) == "cam_a"
+    assert get_reference_video_name(videos) == "cam_a"
 
 
 def test_cross_correlate_detects_known_shift():
@@ -63,9 +63,9 @@ def test_find_cross_correlation_lags_normalizes_to_zero_minimum():
     videos = [_make_video_info("cam_a", 1.0), _make_video_info("cam_b", 1.0)]
 
     lags = find_cross_correlation_lags(audio_signals, videos, sample_rate)
-    lag_by_camera = {lag.camera_name: lag.lag_seconds for lag in lags}
+    lag_by_video = {lag.video_name: lag.lag_seconds for lag in lags}
 
-    assert min(lag_by_camera.values()) == 0.0
+    assert min(lag_by_video.values()) == 0.0
     assert all(confidence.confidence is not None for confidence in lags)
 
 
@@ -76,8 +76,8 @@ def test_trim_audio_in_memory_reuses_loaded_signals(tmp_path):
         "cam_b": np.arange(0, 100, dtype=float),
     }
     lags = {
-        "cam_a": LagResult(camera_name="cam_a", lag_seconds=0.0),
-        "cam_b": LagResult(camera_name="cam_b", lag_seconds=0.1),
+        "cam_a": LagResult(video_name="cam_a", lag_seconds=0.0),
+        "cam_b": LagResult(video_name="cam_b", lag_seconds=0.1),
     }
 
     output_paths = trim_audio_in_memory(
