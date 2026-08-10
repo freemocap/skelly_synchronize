@@ -41,14 +41,21 @@ dynamic = ["version"]
 [project.optional-dependencies]
 dev = [
     "pytest",
+    "requests",
     "black",
-    "bumpver", 
-    "isort", 
-    "pip-tools", 
-    "pytest", 
+    "bumpver",
+    "isort",
+    "pip-tools",
+    "pytest",
     "flake8",
     "flake8-bandit",
     "flake8-bugbear",
+]
+
+[tool.pytest.ini_options]
+addopts = "-m 'not slow'"
+markers = [
+    "slow: opt-in integration tests against the full Figshare sample dataset (real network download + real ffmpeg/deffcode); run explicitly with `pytest -m slow`.",
 ]
 
 [project.urls]
