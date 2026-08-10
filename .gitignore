@@ -155,3 +155,9 @@ cython_debug/
 
 .DS_Store
 CLAUDE.md
+
+# Node (frontend/)
+node_modules/
+dist/
+dist-ssr/
+*.local

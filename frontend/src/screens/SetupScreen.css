@@ -1,0 +1,45 @@
+.setup-screen form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.setup-screen label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: left;
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+.setup-screen label.checkbox-label {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
+
+.setup-screen input[type="text"],
+.setup-screen input[type="number"],
+.setup-screen select {
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.setup-screen button {
+  align-self: flex-start;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  background: var(--accent);
+  color: var(--accent-contrast);
+  cursor: pointer;
+}
+
+.setup-screen button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
