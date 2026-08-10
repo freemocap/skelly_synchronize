@@ -71,6 +71,7 @@ class SyncPipeline:
             lags=context.lags,
             debug_artifact_paths=context.debug_artifact_paths,
             elapsed_seconds=time.time() - start_time,
+            synchronized_frame_count=context.synchronized_frame_count,
         )
 
 

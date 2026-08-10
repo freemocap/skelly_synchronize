@@ -54,3 +54,6 @@ class SyncResult(BaseModel):
     lags: list[LagResult]
     debug_artifact_paths: list[Path]
     elapsed_seconds: float
+    # The single frame count shared by every synchronized video -- verified
+    # identical across cameras by VerifySynchronizedFrameCountStage
+    synchronized_frame_count: int | None = None

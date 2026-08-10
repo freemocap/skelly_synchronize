@@ -447,45 +447,58 @@ class DebugArtifactsStage:
         artifact_paths.append(toml_path)
 
         plot_path = synced_folder / DEBUG_PLOT_NAME
-        if context.request.method == SyncMethod.AUDIO:
-            raw_audio_paths = sorted(
-                context.audio_folder_path.glob(f"*.{AudioExtension.WAV.value}")
-            )
-            trimmed_audio_paths = sorted(
-                (context.audio_folder_path / TRIMMED_AUDIO_FOLDER_NAME).glob(
-                    f"*.{AudioExtension.WAV.value}"
+        try:
+            if context.request.method == SyncMethod.AUDIO:
+                raw_audio_paths = sorted(
+                    context.audio_folder_path.glob(f"*.{AudioExtension.WAV.value}")
                 )
+                trimmed_audio_paths = sorted(
+                    (context.audio_folder_path / TRIMMED_AUDIO_FOLDER_NAME).glob(
+                        f"*.{AudioExtension.WAV.value}"
+                    )
+                )
+                plot_audio_waveforms(raw_audio_paths, trimmed_audio_paths, plot_path)
+            else:
+                # Whether debug data comes from the raw or normalized folder is
+                # resolved from pipeline state, not a filesystem existence check
+                # (resolves KI-10).
+                source_folder = context.normalized_folder_path or Path(
+                    context.request.raw_video_folder_path
+                )
+
+                before_series = {
+                    video.camera_name: compute_brightness_series(video)
+                    for video in context.pre_trim_videos
+                }
+                after_series = {
+                    video.camera_name: compute_brightness_series(video)
+                    for video in context.videos
+                }
+                for camera_name, series in before_series.items():
+                    save_brightness_series(
+                        series,
+                        source_folder
+                        / f"{camera_name}{BRIGHTNESS_SUFFIX}.{NUMPY_EXTENSION}",
+                    )
+
+                before_fps = {v.camera_name: v.fps for v in context.pre_trim_videos}
+                after_fps = {v.camera_name: v.fps for v in context.videos}
+                plot_brightness_series(
+                    before_series, before_fps, after_series, after_fps, plot_path
+                )
+        except Exception:
+            # Plotting is best-effort debug output, not core functionality --
+            # matplotlib can fail when invoked from a thread/process other
+            # than a GUI app's main thread (e.g. called from a Qt app or a
+            # worker process). Don't let that discard an otherwise-successful
+            # synchronization result.
+            logger.warning(
+                "Failed to generate debug plot at %s; continuing without it.",
+                plot_path,
+                exc_info=True,
             )
-            plot_audio_waveforms(raw_audio_paths, trimmed_audio_paths, plot_path)
         else:
-            # Whether debug data comes from the raw or normalized folder is
-            # resolved from pipeline state, not a filesystem existence check
-            # (resolves KI-10).
-            source_folder = context.normalized_folder_path or Path(
-                context.request.raw_video_folder_path
-            )
-
-            before_series = {
-                video.camera_name: compute_brightness_series(video)
-                for video in context.pre_trim_videos
-            }
-            after_series = {
-                video.camera_name: compute_brightness_series(video)
-                for video in context.videos
-            }
-            for camera_name, series in before_series.items():
-                save_brightness_series(
-                    series,
-                    source_folder
-                    / f"{camera_name}{BRIGHTNESS_SUFFIX}.{NUMPY_EXTENSION}",
-                )
-
-            before_fps = {v.camera_name: v.fps for v in context.pre_trim_videos}
-            after_fps = {v.camera_name: v.fps for v in context.videos}
-            plot_brightness_series(
-                before_series, before_fps, after_series, after_fps, plot_path
-            )
-        artifact_paths.append(plot_path)
+            artifact_paths.append(plot_path)
 
         context.debug_artifact_paths = artifact_paths
         return context

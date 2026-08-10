@@ -2,9 +2,16 @@ import logging
 from pathlib import Path
 
 import librosa
+import matplotlib
 import numpy as np
 import toml
-from matplotlib import pyplot as plt
+
+# Force the non-interactive Agg backend: these plots are only ever saved to
+# file, never shown, and matplotlib's auto-selected GUI backend (macosx/Qt/Tk)
+# can crash when the pipeline is invoked from a thread or process other than
+# a GUI app's main thread (e.g. from a Qt-based caller, or a worker process).
+matplotlib.use("Agg")
+from matplotlib import pyplot as plt  # noqa: E402
 
 from skelly_synchronize.core.models import LagResult, VideoInfo
 

@@ -6,6 +6,7 @@ from pydantic import ValidationError
 from skelly_synchronize.core.models import (
     LagResult,
     SyncMethod,
+    SyncResult,
     VideoBackendKind,
     VideoInfo,
 )
@@ -37,3 +38,15 @@ def test_sync_method_values():
 def test_video_backend_kind_values():
     assert VideoBackendKind.FFMPEG == "ffmpeg"
     assert VideoBackendKind.DEFFCODE == "deffcode"
+
+
+def test_sync_result_synchronized_frame_count_defaults_to_none():
+    result = SyncResult(
+        synchronized_video_folder_path=Path("synchronized_videos"),
+        videos_before=[],
+        videos_after=[],
+        lags=[],
+        debug_artifact_paths=[],
+        elapsed_seconds=1.0,
+    )
+    assert result.synchronized_frame_count is None
