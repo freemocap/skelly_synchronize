@@ -39,8 +39,8 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
-    "externalBin": [
-      "binaries/skelly-sync-api"
+    "resources": [
+      "resources/skelly-sync-api/**/*"
     ],
     "android": {
       "debugApplicationIdSuffix": ".debug"

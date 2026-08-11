@@ -13,7 +13,16 @@ from skelly_synchronize.core.exceptions import (
 )
 from skelly_synchronize.core.logging_setup import configure_logging
 
-_LOCALHOST_ORIGIN_REGEX = r"^https?://(localhost|127\.0\.0\.1)(:\d+)?$"
+# Matches both a plain browser dev server (http(s)://localhost[:port] or
+# 127.0.0.1) and the origins Tauri's webview uses to serve the packaged
+# frontend: `tauri://localhost` on macOS/Linux and `https://tauri.localhost`
+# on Windows (see tauri::webview::is_local_url upstream). Without the
+# `tauri://` case, the packaged desktop app's requests to this API get
+# silently blocked by CORS -- it works from the Vite dev server (a plain
+# http origin) but hangs indefinitely once bundled.
+_LOCALHOST_ORIGIN_REGEX = (
+    r"^(https?://(localhost|127\.0\.0\.1)(:\d+)?|tauri://localhost|https://tauri\.localhost)$"
+)
 
 app = FastAPI(title="skelly_synchronize API")
 

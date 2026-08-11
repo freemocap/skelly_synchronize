@@ -1,23 +1,31 @@
 # -*- mode: python ; coding: utf-8 -*-
 #
-# Freezes the `skelly-sync-api` console script into a standalone (onefile)
-# binary for use as a Tauri sidecar. See docs/architecture/06-tauri-desktop.md.
+# Freezes the `skelly-sync-api` console script into a standalone (onedir)
+# binary, bundled into the Tauri app as a plain resource (not a
+# `externalBin` sidecar). See docs/architecture/06-tauri-desktop.md.
 #
-# Onefile (not onedir): Tauri's `externalBin` convention expects a single
-# executable at `binaries/skelly-sync-api-<target-triple>` — onedir's
-# directory-plus-_internal/-payload output doesn't fit that convention
-# cleanly. The Milestone-0 spike proved multiprocessing.Process/Manager work
-# correctly under a frozen PyInstaller build on macOS in onedir mode; onefile
-# uses the same freeze_support()-guarded entry point, so that result carries
-# over (verify empirically after switching modes — see spike test procedure
-# in docs/architecture/06-tauri-desktop.md's implementation plan).
+# Onedir (not onefile): the trimming stage parallelizes across several
+# `ProcessPoolExecutor` workers (skelly_synchronize/core/pipeline/stages.py),
+# and each worker re-executes this frozen binary via `multiprocessing`'s
+# spawn method. Under onefile, every single worker re-pays the ~150MB
+# self-extraction cost on top of the heavy numpy/scipy/librosa/cv2 imports —
+# with several workers spawning in parallel on real (larger, more numerous)
+# video sets, this made sync jobs pathologically slow / appear to hang.
+# Onedir avoids re-extraction per worker (workers just re-exec the
+# already-unpacked directory's binary directly).
+#
+# Because onedir's output is a directory (exe + `_internal/` payload), not a
+# single executable, it doesn't fit Tauri's `externalBin` sidecar convention
+# (which expects one file named `<name>-<target-triple>`). Instead it's
+# bundled as a plain `bundle.resources` entry (preserving directory
+# structure) and spawned directly from Rust via a resolved resource path —
+# see `spawn_api()` in src-tauri/src/lib.rs.
 #
 # Build:  pyinstaller packaging/pyinstaller/skelly-sync-api.spec
-# Output: dist/skelly-sync-api (single binary)
+# Output: dist/skelly-sync-api/ (directory: skelly-sync-api exe + _internal/)
 #
-# Must be renamed to match Tauri's sidecar target-triple convention (e.g.
-# skelly-sync-api-aarch64-apple-darwin) and placed under src-tauri/binaries/
-# before `tauri build` — manual step for now.
+# Must be copied to src-tauri/resources/skelly-sync-api/ before `tauri
+# build` — manual step for now (see the `freeze-api` poe task).
 
 from pathlib import Path
 
@@ -59,11 +67,8 @@ pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
 exe = EXE(
     pyz,
     a.scripts,
-    a.binaries,
-    a.zipfiles,
-    a.datas,
     [],
-    exclude_binaries=False,
+    exclude_binaries=True,
     name="skelly-sync-api",
     debug=False,
     bootloader_ignore_signals=False,
@@ -72,4 +77,15 @@ exe = EXE(
     console=True,
     disable_windowed_traceback=False,
     argv_emulation=False,
+)
+
+coll = COLLECT(
+    exe,
+    a.binaries,
+    a.zipfiles,
+    a.datas,
+    strip=False,
+    upx=False,
+    upx_exclude=[],
+    name="skelly-sync-api",
 )

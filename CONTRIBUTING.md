@@ -74,18 +74,22 @@ dependency graph from scratch (a few minutes); subsequent runs are fast.
 
 ### Building the release app
 
-The release build uses a PyInstaller-frozen `skelly-sync-api` binary as its sidecar.
+The release build uses a PyInstaller-frozen `skelly-sync-api` build as its sidecar.
 Freezing isn't wired into `tauri build` itself yet, so it's a separate step first:
 
 ```bash
 uv run poe freeze-api
 ```
 
-This freezes `skelly-sync-api` with PyInstaller and places the binary at
-`src-tauri/binaries/skelly-sync-api-<target-triple>`, matching Tauri's sidecar naming
-convention (see the task's shell script in `pyproject.toml` if you want the manual
-equivalent). Rerun it any time the Python side changes; if you're only touching Rust
-or frontend code, the previously-frozen binary is reused.
+This freezes `skelly-sync-api` with PyInstaller in **onedir** mode (not onefile — see
+the comment atop `packaging/pyinstaller/skelly-sync-api.spec` for why: with onefile,
+every `ProcessPoolExecutor` trim worker re-paid the full self-extraction cost, which
+made real (multi-video) sync jobs pathologically slow) and copies the result to
+`src-tauri/resources/skelly-sync-api/`. It's bundled as a plain Tauri resource (not a
+`externalBin` sidecar, since onedir's directory-plus-payload output doesn't fit that
+convention) and spawned directly from a resolved resource path in
+`src-tauri/src/lib.rs`. Rerun it any time the Python side changes; if you're only
+touching Rust or frontend code, the previously-frozen build is reused.
 
 Then build the bundle:
 
@@ -102,7 +106,6 @@ Output:
 ```bash
 open "src-tauri/target/release/bundle/macos/Skelly Synchronize.app"
 
-# give the onefile sidecar a few seconds to self-extract and bind, then:
 curl http://127.0.0.1:8000/health   # expect {"status":"ok"}
 ```
 

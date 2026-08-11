@@ -10,6 +10,7 @@ dict written to by the child process and read by the API process.
 import logging
 import multiprocessing
 import threading
+import traceback
 from datetime import datetime, timezone
 from enum import Enum
 from multiprocessing.managers import DictProxy
@@ -69,6 +70,17 @@ def _run_job(request: SyncRequest, shared: DictProxy) -> None:
     except SkellySyncError as e:
         shared["status"] = JobStatus.FAILED.value
         shared["error"] = str(e)
+        return
+    except Exception:
+        # A SkellySyncError-only handler leaves the job stuck at "running"
+        # forever (status never reaches a terminal state) whenever the
+        # pipeline raises something else -- or the worker process crashes
+        # outright (e.g. a native-library issue that only reproduces in a
+        # frozen build). Catch broadly and log the full traceback so a bug
+        # surfaces as a visible failure instead of a silent, indefinite hang.
+        shared["status"] = JobStatus.FAILED.value
+        shared["error"] = traceback.format_exc()
+        logger.exception("sync job crashed with an unexpected error")
         return
 
     shared["status"] = JobStatus.SUCCEEDED.value
@@ -132,11 +144,34 @@ class JobStore:
         if job is None or handle is None:
             return None
 
-        _, shared = handle
+        process, shared = handle
+        status = JobStatus(shared.get("status", job.status.value))
+        error = shared.get("error")
+
+        # If the worker process died without ever writing a terminal status
+        # to `shared` -- e.g. a segfault or other native-level crash, which
+        # skips Python exception handling entirely -- `status` would
+        # otherwise stay stuck at "pending"/"running" forever with no error
+        # surfaced. Treat a dead process reporting a non-terminal status as
+        # a failure instead of silently hanging.
+        non_terminal = status in (JobStatus.PENDING, JobStatus.RUNNING)
+        if non_terminal and not process.is_alive() and process.exitcode is not None:
+            status = JobStatus.FAILED
+            error = (
+                error
+                or f"sync worker process exited unexpectedly (exit code {process.exitcode}), "
+                "with no error reported -- check sidecar logs"
+            )
+            logger.error(
+                "job %s: worker process died without a terminal status (exit code %s)",
+                job_id,
+                process.exitcode,
+            )
+
         result_data = shared.get("result")
         updated = job.model_copy(
             update={
-                "status": JobStatus(shared.get("status", job.status.value)),
+                "status": status,
                 "progress": shared.get("progress", job.progress),
                 "progress_message": shared.get("progress_message"),
                 "result": (
@@ -144,7 +179,7 @@ class JobStore:
                     if result_data is not None
                     else None
                 ),
-                "error": shared.get("error"),
+                "error": error,
                 "updated_at": datetime.now(timezone.utc),
             }
         )

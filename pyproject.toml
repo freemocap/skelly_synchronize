@@ -94,19 +94,15 @@ test-slow = "pytest -m slow"
 format = "black ."
 
 [tool.poe.tasks.freeze-api]
-help = "Freeze skelly-sync-api with PyInstaller and place it under src-tauri/binaries/ for `tauri build` (see CONTRIBUTING.md)."
+help = "Freeze skelly-sync-api with PyInstaller (onedir) and place it under src-tauri/resources/ for `tauri build` (see CONTRIBUTING.md)."
 shell = """
 set -euo pipefail
 rm -rf build dist
 pyinstaller packaging/pyinstaller/skelly-sync-api.spec --noconfirm
-TRIPLE=$(rustc -vV | sed -n 's/host: //p')
-if [ -z "$TRIPLE" ]; then
-    echo "error: could not determine target triple (is the Rust toolchain installed?)" >&2
-    exit 1
-fi
-mkdir -p src-tauri/binaries
-cp dist/skelly-sync-api "src-tauri/binaries/skelly-sync-api-$TRIPLE"
-chmod +x "src-tauri/binaries/skelly-sync-api-$TRIPLE"
+rm -rf src-tauri/resources/skelly-sync-api
+mkdir -p src-tauri/resources
+cp -R dist/skelly-sync-api src-tauri/resources/skelly-sync-api
+chmod +x src-tauri/resources/skelly-sync-api/skelly-sync-api
 rm -rf build dist
-echo "Sidecar ready at src-tauri/binaries/skelly-sync-api-$TRIPLE"
+echo "Sidecar ready at src-tauri/resources/skelly-sync-api/skelly-sync-api"
 """

@@ -35,7 +35,7 @@ MANIFEST
 
 # Tauri desktop shell
 src-tauri/target/
-src-tauri/binaries/
+src-tauri/resources/
 
 # Installer logs
 pip-log.txt
