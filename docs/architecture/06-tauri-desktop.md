@@ -64,7 +64,17 @@ This retires the "two-process, opened in a plain browser tab" dev/run model docu
 
 ## Platform scope
 
-Initial target is macOS, the primary dev machine. Windows and Linux each need their own PyInstaller-frozen sidecar binary (built on/for that target triple) and their own bundle testing — this is not assumed to come "for free" from getting macOS working, and is called out explicitly so it doesn't silently become a gap when the app is eventually shared with users on other platforms.
+Initial development target was macOS, the primary dev machine. Windows, Linux, and
+Intel macOS each need their own natively-built PyInstaller-frozen sidecar binary and
+Tauri bundle — PyInstaller and the Rust/Tauri build both require a native runner per
+target triple, no cross-compiling either side. This is now automated: `.github/workflows/build-desktop-app.yml`
+runs a 4-way build matrix (`windows-latest`, `ubuntu-22.04`, `macos-14` for Apple
+Silicon, `macos-13` for Intel), freezing the sidecar and bundling the app natively on
+each runner, triggered by a `desktop-v*` tag push (attaches installers to a draft
+GitHub Release) or manually via `workflow_dispatch` (uploads build artifacts for
+inspection without cutting a release). Code signing/notarization (Apple, Windows) is
+out of scope for now — builds are unsigned and will trigger Gatekeeper/SmartScreen
+warnings on install.
 
 ## Known issues / limitations resolved by this document
 

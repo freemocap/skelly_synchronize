@@ -53,7 +53,9 @@ cd frontend && npm run dev
 
 The desktop app wraps `frontend` in a Tauri shell that spawns `api` as a managed
 sidecar process. Design details: [`docs/architecture/06-tauri-desktop.md`](docs/architecture/06-tauri-desktop.md).
-Currently macOS-only.
+Windows, Linux, and macOS (Apple Silicon + Intel) are all supported; CI builds and
+releases installers for all four via
+[`.github/workflows/build-desktop-app.yml`](.github/workflows/build-desktop-app.yml).
 
 ### Dev mode
 
