@@ -14,6 +14,20 @@
   transition: width 0.3s ease;
 }
 
+.progress-bar-track.indeterminate .progress-bar-fill {
+  width: 40%;
+  animation: progress-bar-indeterminate 1.2s ease-in-out infinite;
+}
+
+@keyframes progress-bar-indeterminate {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(250%);
+  }
+}
+
 .progress-status {
   margin-top: 8px;
   color: var(--text-muted);

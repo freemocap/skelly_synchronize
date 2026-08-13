@@ -36,16 +36,17 @@ export function ProgressScreen({ jobId, onSucceeded, onBackToSetup }: ProgressSc
   };
 
   const isTerminal = status !== null && TERMINAL_STATUSES.includes(status);
+  const isIndeterminate = status === "pending" || (status === "running" && progress <= 0);
 
   return (
     <section className="progress-screen">
       <h2>Synchronizing…</h2>
       <ErrorBanner message={cancelError} />
 
-      <div className="progress-bar-track">
+      <div className={`progress-bar-track${isIndeterminate ? " indeterminate" : ""}`}>
         <div
           className="progress-bar-fill"
-          style={{ width: `${Math.round(progress * 100)}%` }}
+          style={isIndeterminate ? undefined : { width: `${Math.round(progress * 100)}%` }}
         />
       </div>
       <p className="progress-status">
