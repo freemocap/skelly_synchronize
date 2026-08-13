@@ -97,19 +97,80 @@ jobs:
         with:
           workspaces: src-tauri -> target
 
-      # Tag push: build and attach installers to a draft GitHub Release.
+      # ── Code signing prerequisites (release builds only) ──
+      # Reuses the freemocap org's Azure Trusted Signing account ("freemocap"
+      # account + "freemocap" certificate profile, see src-tauri/tauri.release.conf.json)
+      # and the freemocap org's Apple Developer ID, per the same pattern as
+      # freemocap-ui's build workflow. Dry-run (workflow_dispatch) builds stay
+      # unsigned and don't require any of these secrets.
+      - name: Validate Windows code signing prerequisites
+        if: matrix.platform == 'windows-latest' && startsWith(github.ref, 'refs/tags/desktop-v')
+        shell: pwsh
+        run: |
+          $missingSecrets = @()
+          if (-not "${{ secrets.AZURE_TENANT_ID }}") { $missingSecrets += "AZURE_TENANT_ID" }
+          if (-not "${{ secrets.AZURE_CLIENT_ID }}") { $missingSecrets += "AZURE_CLIENT_ID" }
+          if (-not "${{ secrets.AZURE_CLIENT_SECRET }}") { $missingSecrets += "AZURE_CLIENT_SECRET" }
+          if ($missingSecrets.Count -gt 0) {
+            Write-Error "Missing required secrets for Windows code signing: $($missingSecrets -join ', ')"
+            exit 1
+          }
+          Write-Output "All required Windows code signing secrets are available"
+
+      - name: Install trusted-signing-cli
+        if: matrix.platform == 'windows-latest' && startsWith(github.ref, 'refs/tags/desktop-v')
+        run: cargo install trusted-signing-cli --locked
+
+      - name: Validate macOS code signing prerequisites
+        if: startsWith(matrix.platform, 'macos') && startsWith(github.ref, 'refs/tags/desktop-v')
+        shell: bash
+        run: |
+          MISSING=()
+          [ -z "${{ secrets.MAC_CERTIFICATE_P12 }}" ] && MISSING+=("MAC_CERTIFICATE_P12")
+          [ -z "${{ secrets.MAC_CERTIFICATE_PASSWORD }}" ] && MISSING+=("MAC_CERTIFICATE_PASSWORD")
+          [ -z "${{ secrets.APPLE_SIGNING_IDENTITY }}" ] && MISSING+=("APPLE_SIGNING_IDENTITY")
+          [ -z "${{ secrets.APPLE_ID }}" ] && MISSING+=("APPLE_ID")
+          [ -z "${{ secrets.APPLE_ID_PASSWORD }}" ] && MISSING+=("APPLE_ID_PASSWORD")
+          [ -z "${{ secrets.APPLE_TEAM_ID }}" ] && MISSING+=("APPLE_TEAM_ID")
+          if [ ${#MISSING[@]} -gt 0 ]; then
+            echo "::error::Missing required secrets for macOS code signing: ${MISSING[*]}"
+            exit 1
+          fi
+          echo "All required macOS code signing secrets are available"
+
+      # Tag push: build, sign/notarize, and attach installers to a draft GitHub Release.
+      #
+      # macOS signing+notarization is handled natively by tauri-action/the Tauri
+      # bundler from the APPLE_* env vars below (it imports the cert into a
+      # temporary keychain and notarizes itself -- no manual `security`/`codesign`
+      # steps needed, unlike freemocap-ui's Electron-builder flow).
+      #
+      # Windows signing goes through tauri.release.conf.json's bundle.windows.signCommand,
+      # which shells out to trusted-signing-cli (installed above) using Azure Trusted
+      # Signing -- the same service and account freemocap-ui signs with via
+      # azure/trusted-signing-action, just invoked during the Tauri bundle step instead
+      # of as a separate post-build signing pass.
       - name: Build and publish desktop bundle
         if: startsWith(github.ref, 'refs/tags/desktop-v')
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          APPLE_CERTIFICATE: ${{ secrets.MAC_CERTIFICATE_P12 }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.MAC_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_ID_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
         with:
           projectPath: .
           tagName: ${{ github.ref_name }}
           releaseName: "Skelly Synchronize Desktop ${{ github.ref_name }}"
           releaseDraft: true
           prerelease: false
-          args: --target ${{ matrix.target }}
+          args: --target ${{ matrix.target }} --config src-tauri/tauri.release.conf.json
 
       # Manual dispatch: build only, upload as a workflow artifact for inspection.
       - name: Build (dry run, no release)

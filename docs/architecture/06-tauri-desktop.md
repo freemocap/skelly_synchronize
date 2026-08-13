@@ -42,6 +42,7 @@ Onefile was tried first (single executable, fits `externalBin`'s convention clea
 src-tauri/
 ├── Cargo.toml
 ├── tauri.conf.json
+├── tauri.release.conf.json # release-only overlay: Windows signCommand (merged via `tauri build --config`, tag pushes only)
 ├── capabilities/          # Tauri 2 permission grants (dialog, shell)
 ├── icons/
 ├── resources/              # frozen sidecar (onedir) lands here; git-ignored, built via packaging/pyinstaller
@@ -72,9 +73,41 @@ runs a 4-way build matrix (`windows-latest`, `ubuntu-22.04`, `macos-14` for Appl
 Silicon, `macos-13` for Intel), freezing the sidecar and bundling the app natively on
 each runner, triggered by a `desktop-v*` tag push (attaches installers to a draft
 GitHub Release) or manually via `workflow_dispatch` (uploads build artifacts for
-inspection without cutting a release). Code signing/notarization (Apple, Windows) is
-out of scope for now — builds are unsigned and will trigger Gatekeeper/SmartScreen
-warnings on install.
+inspection without cutting a release).
+
+**Code signing/notarization**: tag-push (release) builds are signed, reusing the
+freemocap org's existing signing infrastructure rather than standing up new
+certificates:
+
+- **macOS**: signing + notarization is handled natively by `tauri-apps/tauri-action`/the
+  Tauri bundler itself, driven by `APPLE_CERTIFICATE`, `APPLE_CERTIFICATE_PASSWORD`,
+  `APPLE_SIGNING_IDENTITY`, `APPLE_ID`, `APPLE_PASSWORD`, and `APPLE_TEAM_ID` env vars
+  set in the workflow from repo secrets (`MAC_CERTIFICATE_P12`,
+  `MAC_CERTIFICATE_PASSWORD`, `APPLE_SIGNING_IDENTITY`, `APPLE_ID`,
+  `APPLE_ID_PASSWORD`, `APPLE_TEAM_ID`) — reusing freemocap's Apple Developer ID. No
+  manual `security`/`codesign` scripting is needed (unlike freemocap-ui's
+  Electron-builder flow); the Tauri bundler imports the cert into a temporary
+  keychain and notarizes as part of `tauri build`.
+- **Windows**: signed via `trusted-signing-cli` against Azure Trusted Signing,
+  configured through `bundle.windows.signCommand` in a release-only config overlay
+  (`src-tauri/tauri.release.conf.json`, merged in via `tauri build --config` only on
+  tag-push builds — dry-run `workflow_dispatch` builds stay unsigned and don't need
+  any of these secrets). This reuses freemocap's Azure Trusted Signing account
+  (`freemocap` account, `freemocap` certificate profile) via `AZURE_TENANT_ID`,
+  `AZURE_CLIENT_ID`, `AZURE_CLIENT_SECRET` repo secrets — the same service
+  freemocap-ui signs with via `azure/trusted-signing-action`, just invoked during the
+  Tauri bundle step instead of as a separate post-build signing pass.
+- **Linux**: unsigned, matching freemocap-ui (AppImage/`.deb` aren't signed there
+  either).
+- The workflow fails fast on a tag push with a clear error if any required secret is
+  missing (mirroring freemocap-ui's prerequisite-validation steps), rather than
+  failing deep into the build with a cryptic bundler error.
+- These repo secrets must be added to this repository before a real `desktop-v*` tag
+  push will succeed — org-level secrets aren't automatically shared across repos.
+  `APPLE_SIGNING_IDENTITY` in particular has no freemocap-ui equivalent to copy: its
+  Electron/`electron-builder` flow auto-discovers the signing identity from the
+  keychain (`CSC_IDENTITY_AUTO_DISCOVERY`), but Tauri's bundler requires the identity
+  string explicitly.
 
 ## Known issues / limitations resolved by this document
 
