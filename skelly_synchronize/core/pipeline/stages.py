@@ -256,7 +256,7 @@ def _trim_video_worker(
     lag: LagResult,
     backend_kind: VideoBackendKind,
     output_dir: Path,
-    minimum_duration: float,
+    frame_count: int,
 ) -> VideoInfo:
     """Runs in a worker process -- arguments must stay picklable.
 
@@ -266,9 +266,13 @@ def _trim_video_worker(
     backend = get_backend(backend_kind)
     output_path = Path(output_dir) / synced_video_filename(video_info.video_name)
 
-    start_seconds = lag.lag_seconds
-    end_seconds = start_seconds + minimum_duration
-    backend.trim(video_info.filepath, start_seconds, end_seconds, output_path)
+    # Snapping the start to an exact frame boundary (rather than the raw lag
+    # in seconds) is what lets `frame_count` -- computed from measured,
+    # whole-frame counts in `TrimStage` -- come out identical across videos
+    # instead of drifting by a frame under backend-specific seek rounding.
+    start_frame = round(lag.lag_seconds * video_info.fps)
+    start_seconds = start_frame / video_info.fps
+    backend.trim(video_info.filepath, start_seconds, frame_count, output_path)
 
     return _probe_with_frame_count(get_backend(VideoBackendKind.FFMPEG), output_path)
 
@@ -288,8 +292,16 @@ class TrimStage:
         lags_by_video = {lag.video_name: lag for lag in context.lags}
         output_dir = context.synchronized_folder_path
 
-        minimum_duration = min(
-            video.duration_seconds - lags_by_video[video.video_name].lag_seconds
+        # Deriving the shared frame budget from each video's own measured,
+        # whole-frame `frame_count` (rather than from `duration_seconds`,
+        # which ffprobe reports as an approximate, sub-frame-precision
+        # value) guarantees every video actually has at least that many
+        # frames available from its lag point onward -- ffprobe's duration
+        # rounding was previously letting the budget overshoot by exactly
+        # one frame on whichever video defined the shared minimum.
+        frame_count = min(
+            video.frame_count
+            - round(lags_by_video[video.video_name].lag_seconds * video.fps)
             for video in videos
         )
 
@@ -305,7 +317,7 @@ class TrimStage:
                     lags_by_video[video.video_name],
                     context.request.video_handler,
                     output_dir,
-                    minimum_duration,
+                    frame_count,
                 ): video.video_name
                 for video in videos
             }

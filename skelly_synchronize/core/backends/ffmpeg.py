@@ -15,6 +15,15 @@ logger = logging.getLogger(__name__)
 FFMPEG_EXECUTABLE = "ffmpeg"
 FFPROBE_EXECUTABLE = "ffprobe"
 
+# ffmpeg's accurate `-ss` seeks to the first frame whose timestamp is >= the
+# target. Seeking to a target that lands exactly on (or a hair after) the
+# intended frame's own timestamp is therefore ambiguous under floating-point
+# rounding -- it can tip into skipping that frame and starting one frame
+# late. Nudging the seek target slightly earlier removes the ambiguity
+# without risking landing on the previous frame instead, since this is far
+# smaller than any realistic frame duration (up to ~1000fps).
+SEEK_EPSILON_SECONDS = 1e-4
+
 
 def check_for_ffmpeg() -> str:
     ffmpeg_pathstring = shutil.which(FFMPEG_EXECUTABLE)
@@ -145,23 +154,26 @@ class FfmpegBackend:
         self,
         filepath: Path,
         start_seconds: float,
-        end_seconds: float | None,
+        frame_count: int,
         output_path: Path,
     ) -> Path:
         check_for_ffmpeg()
         filepath = Path(filepath)
         output_path = Path(output_path)
 
+        seek_seconds = max(0.0, start_seconds - SEEK_EPSILON_SECONDS)
+
         command = [
             FFMPEG_EXECUTABLE,
             "-i",
             str(filepath),
             "-ss",
-            str(start_seconds),
+            str(seek_seconds),
+            "-frames:v",
+            str(frame_count),
+            "-y",
+            str(output_path),
         ]
-        if end_seconds is not None:
-            command.extend(["-t", str(end_seconds - start_seconds)])
-        command.extend(["-y", str(output_path)])
 
         result = _run_subprocess(command)
         if result.returncode != 0:

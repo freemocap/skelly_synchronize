@@ -37,17 +37,19 @@ class DeffcodeBackend:
         self,
         filepath: Path,
         start_seconds: float,
-        end_seconds: float | None,
+        frame_count: int,
         output_path: Path,
     ) -> Path:
         filepath = Path(filepath)
         output_path = Path(output_path)
         video_info = self.probe(filepath)
 
-        start_frame = int(start_seconds * video_info.fps)
-        end_frame = (
-            int(end_seconds * video_info.fps) if end_seconds is not None else None
-        )
+        # `end_frame` is derived by adding the exact integer `frame_count`
+        # rather than by converting an end timestamp back to a frame index --
+        # the latter risks losing a frame to floating-point rounding right at
+        # the boundary (the same class of bug fixed in `FfmpegBackend.trim`).
+        start_frame = round(start_seconds * video_info.fps)
+        end_frame = start_frame + frame_count
 
         _trim_frames_with_deffcode(
             input_video_path=filepath,
@@ -77,7 +79,7 @@ def _get_transpose_ffparams(input_video_path: Path, ffmpeg_location: str) -> dic
 def _trim_frames_with_deffcode(
     input_video_path: Path,
     start_frame: int,
-    end_frame: int | None,
+    end_frame: int,
     output_path: Path,
 ) -> None:
     try:
@@ -111,13 +113,11 @@ def _trim_frames_with_deffcode(
 
             # frames requested are always a contiguous range, so a simple
             # bounds check is O(1) per frame instead of an O(n) list scan (KI-06).
-            if current_frame >= start_frame and (
-                end_frame is None or current_frame < end_frame
-            ):
+            if start_frame <= current_frame < end_frame:
                 video_writer.write(frame)
                 written_frames += 1
 
-            if end_frame is not None and current_frame >= end_frame - 1:
+            if current_frame >= end_frame - 1:
                 break
 
             current_frame += 1

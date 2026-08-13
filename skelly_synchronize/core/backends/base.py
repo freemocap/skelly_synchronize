@@ -11,7 +11,7 @@ class VideoBackend(Protocol):
         self,
         filepath: Path,
         start_seconds: float,
-        end_seconds: float | None,
+        frame_count: int,
         output_path: Path,
     ) -> Path: ...
 

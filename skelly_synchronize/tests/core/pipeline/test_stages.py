@@ -131,7 +131,7 @@ class FakeBackend:
     def __init__(self, should_fail_for: set[str] | None = None):
         self.should_fail_for = should_fail_for or set()
 
-    def trim(self, filepath, start_seconds, end_seconds, output_path):
+    def trim(self, filepath, start_seconds, frame_count, output_path):
         video_name = Path(filepath).stem
         if video_name in self.should_fail_for:
             raise RuntimeError(f"boom for {video_name}")
@@ -149,7 +149,7 @@ def test_trim_video_worker_uses_ffmpeg_backend_for_final_probe(monkeypatch, tmp_
     lag = LagResult(video_name="raw_cam_a", lag_seconds=1.0)
 
     result = _trim_video_worker(
-        video_info, lag, VideoBackendKind.FFMPEG, tmp_path, minimum_duration=5.0
+        video_info, lag, VideoBackendKind.FFMPEG, tmp_path, frame_count=150
     )
 
     assert result.video_name == "synced_cam_a"
@@ -170,8 +170,8 @@ def test_trim_stage_isolates_per_video_errors(monkeypatch, tmp_path):
     output_dir.mkdir()
 
     videos = [
-        _make_video_info("cam_a", duration_seconds=10.0),
-        _make_video_info("cam_b", duration_seconds=10.0),
+        _make_video_info("cam_a", duration_seconds=10.0, frame_count=300),
+        _make_video_info("cam_b", duration_seconds=10.0, frame_count=300),
     ]
     lags = [
         LagResult(video_name="cam_a", lag_seconds=0.0),
@@ -198,8 +198,8 @@ def test_trim_stage_succeeds_when_all_videos_trim_cleanly(monkeypatch, tmp_path)
     output_dir.mkdir()
 
     videos = [
-        _make_video_info("cam_a", duration_seconds=10.0),
-        _make_video_info("cam_b", duration_seconds=10.0),
+        _make_video_info("cam_a", duration_seconds=10.0, frame_count=300),
+        _make_video_info("cam_b", duration_seconds=10.0, frame_count=300),
     ]
     lags = [
         LagResult(video_name="cam_a", lag_seconds=0.0),
