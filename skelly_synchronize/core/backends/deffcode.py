@@ -3,9 +3,13 @@ import logging
 from pathlib import Path
 
 import cv2
-from deffcode import FFdecoder, Sourcer
+from deffcode import FFdecoder
 
-from skelly_synchronize.core.backends.ffmpeg import FfmpegBackend, check_for_ffmpeg
+from skelly_synchronize.core.backends.ffmpeg import (
+    FfmpegBackend,
+    check_for_ffmpeg,
+    extract_video_rotation,
+)
 from skelly_synchronize.core.exceptions import SkellySyncError
 from skelly_synchronize.core.models import VideoInfo
 
@@ -60,11 +64,8 @@ class DeffcodeBackend:
         return output_path
 
 
-def _get_transpose_ffparams(input_video_path: Path, ffmpeg_location: str) -> dict:
-    sourcer = Sourcer(
-        source=str(input_video_path), custom_ffmpeg=ffmpeg_location
-    ).probe_stream()
-    orientation = sourcer.retrieve_metadata()["source_video_orientation"]
+def _get_transpose_ffparams(input_video_path: Path) -> dict:
+    orientation = extract_video_rotation(input_video_path)
 
     if orientation == 0:
         return {}
@@ -87,7 +88,7 @@ def _trim_frames_with_deffcode(
     except FileNotFoundError:
         ffmpeg_location = ""
 
-    ffparams = _get_transpose_ffparams(input_video_path, ffmpeg_location)
+    ffparams = _get_transpose_ffparams(input_video_path)
 
     decoder = FFdecoder(
         str(input_video_path),

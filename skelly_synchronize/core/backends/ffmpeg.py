@@ -1,3 +1,4 @@
+import json
 import logging
 import shutil
 import subprocess
@@ -212,6 +213,43 @@ def extract_audio_sample_rate(filepath: Path) -> int:
             f"No audio stream found for video {filepath}, ensure video has audio"
         )
     return int(_parse_ffmpeg_output(result.stdout, filepath))
+
+
+def extract_video_rotation(filepath: Path) -> float:
+    """Get a video's display-matrix rotation in degrees via ffprobe (0.0 if unrotated).
+
+    Reads ffprobe's own JSON side-data listing rather than relying on any
+    downstream library's text-scrape of `ffmpeg -i`'s stderr, whose exact
+    wording is not a stable contract across ffmpeg versions.
+    """
+    check_for_ffprobe()
+    command = [
+        FFPROBE_EXECUTABLE,
+        "-v",
+        "error",
+        "-select_streams",
+        "v:0",
+        "-show_entries",
+        "stream_side_data_list",
+        "-of",
+        "json",
+        str(filepath),
+    ]
+    result = _run_subprocess(command)
+    if result.returncode != 0:
+        raise BackendSubprocessError(
+            f"Failed to extract rotation for video {filepath}",
+            stderr=result.stderr.decode(errors="replace"),
+            returncode=result.returncode,
+        )
+    data = json.loads(result.stdout)
+    streams = data.get("streams", [])
+    if not streams:
+        return 0.0
+    for side_data in streams[0].get("side_data_list", []):
+        if "rotation" in side_data:
+            return float(side_data["rotation"])
+    return 0.0
 
 
 def extract_audio(filepath: Path, output_path: Path) -> Path:
