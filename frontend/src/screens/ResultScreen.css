@@ -1,0 +1,48 @@
+.lag-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 16px;
+}
+
+.lag-table th,
+.lag-table td {
+  border: 1px solid var(--border);
+  padding: 8px 10px;
+  text-align: left;
+  font-size: 14px;
+}
+
+.lag-table th {
+  background: var(--bg-muted);
+}
+
+.debug-plot {
+  margin-top: 24px;
+}
+
+.debug-plot img {
+  max-width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.output-path {
+  margin-top: 16px;
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+.output-path .selectable {
+  user-select: all;
+  font-family: ui-monospace, Consolas, monospace;
+}
+
+.result-screen button {
+  margin-top: 24px;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  background: var(--accent);
+  color: var(--accent-contrast);
+  cursor: pointer;
+}

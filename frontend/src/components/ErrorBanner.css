@@ -1,0 +1,18 @@
+.error-banner {
+  background: var(--danger-bg);
+  border: 1px solid var(--danger);
+  color: var(--danger);
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+}
+
+.error-banner p {
+  margin: 0;
+}
+
+.error-banner pre {
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 13px;
+}

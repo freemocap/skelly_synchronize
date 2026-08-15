@@ -1,0 +1,60 @@
+:root {
+  --text: #2b2b33;
+  --text-muted: #6b6375;
+  --bg: #ffffff;
+  --bg-muted: #f4f3ec;
+  --border: #e5e4e7;
+  --accent: #7c3aed;
+  --accent-contrast: #ffffff;
+  --danger: #b3261e;
+  --danger-bg: #fdecea;
+  --success: #2e7d32;
+
+  font: 16px/1.45 system-ui, "Segoe UI", Roboto, sans-serif;
+  color-scheme: light dark;
+  color: var(--text);
+  background: var(--bg);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --text: #e5e4e7;
+    --text-muted: #9ca3af;
+    --bg: #16171d;
+    --bg-muted: #1f2028;
+    --border: #2e303a;
+    --accent: #c084fc;
+    --accent-contrast: #16171d;
+    --danger: #f2b8b5;
+    --danger-bg: #3a1f1f;
+    --success: #7ac47f;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}
+
+#root {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 24px 16px 64px;
+}
+
+h1,
+h2 {
+  color: var(--text);
+}
+
+button {
+  font: inherit;
+}
+
+input,
+select {
+  font: inherit;
+}

@@ -6,7 +6,7 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "skelly_synchronize"
-description = "Basic template of a python repository"
+description = "Synchronize multi-camera video recordings post-recording, without needing timestamps."
 readme = "README.md"
 authors = [{ name = "skelly_synchronize", email = "info@freemocap.org" }]
 license = { file = "LICENSE" }
@@ -17,38 +17,54 @@ classifiers = [
     "Programming Language :: Python :: 3",
 ] #additional classifiers can be found here: https://pypi.org/classifiers/
 
-keywords = ["basic",
-            "template",
-            "python",
-            "repository"] #change these to your project keywords
+keywords = ["video",
+            "synchronization",
+            "motion-capture",
+            "freemocap"]
 
 dependencies = [
+"pydantic>=2.0",
 "librosa==0.10.1",
-"PySide6>=6.6, <6.8",
-"numpy==1.26.2",
-"scipy==1.11.4",
-"opencv-contrib-python==4.8.*",
+"numpy>=1.26.2,<3",
+"scipy>=1.11.4,<2",
+"opencv-contrib-python>=4.8",
 "deffcode==0.2.6",
 "toml==0.10.2",
-"matplotlib==3.8.2",
+"matplotlib>=3.8.2,<4",
 "setuptools==75.8.0"
 ]
 
-requires-python = ">=3.9,<3.13"
+requires-python = ">=3.10,<3.13"
 
 dynamic = ["version"]
 
 [project.optional-dependencies]
+api = [
+    "fastapi>=0.110,<1",
+    "uvicorn[standard]>=0.30,<1",
+]
+packaging = [
+    "pyinstaller>=6,<7",
+]
 dev = [
     "pytest",
+    "requests",
+    "httpx",
     "black",
-    "bumpver", 
-    "isort", 
-    "pip-tools", 
-    "pytest", 
+    "bumpver",
+    "isort",
+    "pip-tools",
+    "pytest",
     "flake8",
     "flake8-bandit",
     "flake8-bugbear",
+    "poethepoet",
+]
+
+[tool.pytest.ini_options]
+addopts = "-m 'not slow'"
+markers = [
+    "slow: opt-in integration tests against the full Figshare sample dataset (real network download + real ffmpeg/deffcode); run explicitly with `pytest -m slow`.",
 ]
 
 [project.urls]
@@ -56,6 +72,9 @@ Homepage = "https://freemocap.org"
 Documentation = "https://freemocap.github.io/skelly_synchronize/"
 Github = "https://github.com/freemocap/skelly_synchronize"
 
+[project.scripts]
+skelly-synchronize = "skelly_synchronize.cli.main:main"
+skelly-sync-api = "skelly_synchronize.api.main:run"
 
 [tool.bumpver] #bump the version by entering `bumpver update` in the terminal
 current_version = "v2025.04.1037"
@@ -69,5 +88,21 @@ push            = true
 "pyproject.toml" = ["{version}"]
 "skelly_synchronize/__init__.py" = ["{version}"]
 
-[project.scripts]
-skelly_synchronize = "skelly_synchronize.__main__:run"
+[tool.poe.tasks]
+test = "pytest skelly_synchronize/tests"
+test-slow = "pytest -m slow"
+format = "black ."
+
+[tool.poe.tasks.freeze-api]
+help = "Freeze skelly-sync-api with PyInstaller (onedir) and place it under src-tauri/resources/ for `tauri build` (see CONTRIBUTING.md)."
+shell = """
+set -euo pipefail
+rm -rf build dist
+pyinstaller packaging/pyinstaller/skelly-sync-api.spec --noconfirm
+rm -rf src-tauri/resources/skelly-sync-api
+mkdir -p src-tauri/resources
+cp -R dist/skelly-sync-api src-tauri/resources/skelly-sync-api
+chmod +x src-tauri/resources/skelly-sync-api/skelly-sync-api
+rm -rf build dist
+echo "Sidecar ready at src-tauri/resources/skelly-sync-api/skelly-sync-api"
+"""

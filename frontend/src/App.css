@@ -1,0 +1,30 @@
+.app-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.app-header h1 {
+  font-size: 22px;
+  margin: 0;
+}
+
+.app-header nav a {
+  color: var(--accent);
+  cursor: pointer;
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.app-header nav a:hover {
+  text-decoration: underline;
+}
+
+.app-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  color: var(--text-secondary, #666);
+}

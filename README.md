@@ -4,30 +4,48 @@ Skelly Synchronize is a package for synchronizing videos post-recording, without
 
 ## Install and Run
 
-Skelly_synchronize can be installed through pip by running `pip install skelly_synchronize` in your terminal. Once it has installed, it can be run with the command `python -m skelly_synchronize`. 
+Skelly Synchronize is a Python library (`core`), a FastAPI server (`api`), and a React web UI (`frontend`), plus a CLI. To use the web UI, run the API server and the frontend dev server as two processes:
 
-While running, the GUI window may appear frozen, but the terminal should show the progress. Large videos may take a significant amount of time. 
+```
+pip install -e ".[api]"
+skelly-sync-api
+```
+
+This starts the API on `http://127.0.0.1:8000`. Then, in a second terminal:
+
+```
+cd frontend
+npm install
+npm run dev
+```
+
+Open the URL Vite prints (typically `http://localhost:5173`) in your browser. See [`frontend/README.md`](frontend/README.md) for details.
+
+A standalone macOS desktop app (packaged with Tauri, bundling the API so you don't
+need to run it separately) is also in progress — see [CONTRIBUTING.md](CONTRIBUTING.md#desktop-app-tauri).
 
 Skelly_synchronize currently depends on FFmpeg, a command line tool that handles the video files. If you do not have FFmpeg downloaded, you will need to install it separately. You can download FFmpeg here: https://ffmpeg.org/download.html
 
-<img width="598" alt="Screen Shot 2023-10-10 at 9 51 11 AM" src="https://github.com/freemocap/skelly_synchronize/assets/24758117/2c34a076-90d9-4d8f-bd3a-5b4649586d8c">
+## Contributing
 
+For dev environment setup (via [uv](https://docs.astral.sh/uv/)), running tests, and
+building/testing the desktop app, see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Using Skelly Synchronize
 
-Once you have the GUI open, choose a folder of raw videos that you would like to synchronize. The videos must overlap in time to be able to be synchronized. The software currently works with `mp4`, `mkv`, `avi`, `mpeg`, and `mov` files. Once the folder of videos has been selected, you can press the button for the synchronization method you would like to run. The synchronized videos will be placed in a folder called "synchronized_videos" that will be in the same directory as the folder of raw videos.
+Once you have the web UI open, choose a folder of raw videos that you would like to synchronize. The videos must overlap in time to be able to be synchronized. The software currently works with `mp4`, `mkv`, `avi`, `mpeg`, and `mov` files. Once the folder of videos has been selected, you can choose the synchronization method you would like to run. The synchronized videos will be placed in a folder called "synchronized_videos" that will be in the same directory as the folder of raw videos (or in a custom output folder, if one was specified).
 
 ### Synchronization Methods
 
 **Audio Cross Correlation** synchronizes by aligning the audio files of each video as closely as possible. Cross correlation is a mathematical technique used to find the amount of offset between different signals. In this case, Skelly Synchronize is using cross correlation to find the time difference between the audio tracks of the video files.
 
-**Brightness Contrast Detection** synchronizes by looking for a quick flash near the beginning of each video. This flash can be from a camera flash, turning on a light, or even opening curtains to a bright window. Skelly Synchronize looks for the first time in each video that the change in brightness (contrast) between subsequent frames passes a certain threshold, and then aligns the brightness change of each video. The brightness contrast threshold used can be set as a parameter in the GUI, and higher threshold values will require a more abrupt and brighter flash in the video. Synchronization will be best if all cameras see the flash at the same time, so methods like turning on a light will yield better synchronization than methods like opening curtains.
+**Brightness Contrast Detection** synchronizes by looking for a quick flash near the beginning of each video. This flash can be from a camera flash, turning on a light, or even opening curtains to a bright window. Skelly Synchronize looks for the first time in each video that the change in brightness (contrast) between subsequent frames passes a certain threshold, and then aligns the brightness change of each video. The brightness contrast threshold used can be set as a parameter in the web UI, and higher threshold values will require a more abrupt and brighter flash in the video. Synchronization will be best if all cameras see the flash at the same time, so methods like turning on a light will yield better synchronization than methods like opening curtains.
 
 ### Video Requirements
 
 For **audio synchronization**, all videos must have audio tracks. Synchronization will work better if there are short, distinct sounds audible from each camera, for example a loud clap.
 
-For **brightness synchronization**, there must be a quick increase in brightness across all of the video files. This method requires a significant brightness change visible to all cameras, for example turning on a bright light or firing a flash visible to all cameras. The synchronization will be based off of the first brightness change in each video that crosses a threshold. You can set the brightness ratio threshold in the gui before synchronizing. The threshold takes into account both the brightness contrast compared to the preceding frame, and the rate of change of brightness contrast. It may take multiple tries with different brightness ratio thresholds to get proper synchronization, although the default should work in most cases.
+For **brightness synchronization**, there must be a quick increase in brightness across all of the video files. This method requires a significant brightness change visible to all cameras, for example turning on a bright light or firing a flash visible to all cameras. The synchronization will be based off of the first brightness change in each video that crosses a threshold. You can set the brightness ratio threshold in the web UI before synchronizing. The threshold takes into account both the brightness contrast compared to the preceding frame, and the rate of change of brightness contrast. It may take multiple tries with different brightness ratio thresholds to get proper synchronization, although the default should work in most cases.
 
 ### Additional Files
 

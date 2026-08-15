@@ -1,0 +1,186 @@
+name: Build Desktop App
+
+on:
+  push:
+    tags: ["desktop-v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write # required for tauri-action to create/update the draft release
+
+jobs:
+  test:
+    name: Pre-build sanity checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+          architecture: "x64"
+          cache: "pip"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+      - name: Install FFmpeg
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+      - name: black --check
+        run: black --check .
+      - name: pytest
+        run: pytest skelly_synchronize/tests
+
+  build:
+    name: Build (${{ matrix.target }})
+    needs: test
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: windows-latest
+            target: x86_64-pc-windows-msvc
+          - platform: ubuntu-22.04
+            target: x86_64-unknown-linux-gnu
+          - platform: macos-14
+            target: aarch64-apple-darwin
+          - platform: macos-13
+            target: x86_64-apple-darwin
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Linux system dependencies
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential curl wget file \
+            libwebkit2gtk-4.1-dev libxdo-dev libssl-dev \
+            libayatana-appindicator3-dev librsvg2-dev
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+          architecture: "x64"
+          cache: "pip"
+
+      - name: Install Python build dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[api,dev,packaging]"
+
+      - name: Freeze API sidecar with PyInstaller
+        shell: bash
+        run: poe freeze-api
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        run: npm ci --prefix frontend
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Cache Rust build
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
+
+      # ── Code signing prerequisites (release builds only) ──
+      # Reuses the freemocap org's Azure Trusted Signing account ("freemocap"
+      # account + "freemocap" certificate profile, see src-tauri/tauri.release.conf.json)
+      # and the freemocap org's Apple Developer ID, per the same pattern as
+      # freemocap-ui's build workflow. Dry-run (workflow_dispatch) builds stay
+      # unsigned and don't require any of these secrets.
+      - name: Validate Windows code signing prerequisites
+        if: matrix.platform == 'windows-latest' && startsWith(github.ref, 'refs/tags/desktop-v')
+        shell: pwsh
+        run: |
+          $missingSecrets = @()
+          if (-not "${{ secrets.AZURE_TENANT_ID }}") { $missingSecrets += "AZURE_TENANT_ID" }
+          if (-not "${{ secrets.AZURE_CLIENT_ID }}") { $missingSecrets += "AZURE_CLIENT_ID" }
+          if (-not "${{ secrets.AZURE_CLIENT_SECRET }}") { $missingSecrets += "AZURE_CLIENT_SECRET" }
+          if ($missingSecrets.Count -gt 0) {
+            Write-Error "Missing required secrets for Windows code signing: $($missingSecrets -join ', ')"
+            exit 1
+          }
+          Write-Output "All required Windows code signing secrets are available"
+
+      - name: Install trusted-signing-cli
+        if: matrix.platform == 'windows-latest' && startsWith(github.ref, 'refs/tags/desktop-v')
+        run: cargo install trusted-signing-cli --locked
+
+      - name: Validate macOS code signing prerequisites
+        if: startsWith(matrix.platform, 'macos') && startsWith(github.ref, 'refs/tags/desktop-v')
+        shell: bash
+        run: |
+          MISSING=()
+          [ -z "${{ secrets.MAC_CERTIFICATE_P12 }}" ] && MISSING+=("MAC_CERTIFICATE_P12")
+          [ -z "${{ secrets.MAC_CERTIFICATE_PASSWORD }}" ] && MISSING+=("MAC_CERTIFICATE_PASSWORD")
+          [ -z "${{ secrets.APPLE_SIGNING_IDENTITY }}" ] && MISSING+=("APPLE_SIGNING_IDENTITY")
+          [ -z "${{ secrets.APPLE_ID }}" ] && MISSING+=("APPLE_ID")
+          [ -z "${{ secrets.APPLE_ID_PASSWORD }}" ] && MISSING+=("APPLE_ID_PASSWORD")
+          [ -z "${{ secrets.APPLE_TEAM_ID }}" ] && MISSING+=("APPLE_TEAM_ID")
+          if [ ${#MISSING[@]} -gt 0 ]; then
+            echo "::error::Missing required secrets for macOS code signing: ${MISSING[*]}"
+            exit 1
+          fi
+          echo "All required macOS code signing secrets are available"
+
+      # Tag push: build, sign/notarize, and attach installers to a draft GitHub Release.
+      #
+      # macOS signing+notarization is handled natively by tauri-action/the Tauri
+      # bundler from the APPLE_* env vars below (it imports the cert into a
+      # temporary keychain and notarizes itself -- no manual `security`/`codesign`
+      # steps needed, unlike freemocap-ui's Electron-builder flow).
+      #
+      # Windows signing goes through tauri.release.conf.json's bundle.windows.signCommand,
+      # which shells out to trusted-signing-cli (installed above) using Azure Trusted
+      # Signing -- the same service and account freemocap-ui signs with via
+      # azure/trusted-signing-action, just invoked during the Tauri bundle step instead
+      # of as a separate post-build signing pass.
+      - name: Build and publish desktop bundle
+        if: startsWith(github.ref, 'refs/tags/desktop-v')
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          APPLE_CERTIFICATE: ${{ secrets.MAC_CERTIFICATE_P12 }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.MAC_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_ID_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+        with:
+          projectPath: .
+          tagName: ${{ github.ref_name }}
+          releaseName: "Skelly Synchronize Desktop ${{ github.ref_name }}"
+          releaseDraft: true
+          prerelease: false
+          args: --target ${{ matrix.target }} --config src-tauri/tauri.release.conf.json
+
+      # Manual dispatch: build only, upload as a workflow artifact for inspection.
+      - name: Build (dry run, no release)
+        if: github.event_name == 'workflow_dispatch'
+        run: npx --prefix frontend tauri build -- --target ${{ matrix.target }}
+
+      - name: Upload build artifacts (dry run)
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@v4
+        with:
+          name: skelly-synchronize-${{ matrix.target }}
+          path: src-tauri/target/${{ matrix.target }}/release/bundle/**
+          retention-days: 7
